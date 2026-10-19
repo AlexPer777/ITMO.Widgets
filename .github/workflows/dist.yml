@@ -8,9 +8,6 @@ name: dist
 
 on:
   workflow_dispatch:
-  release:
-    types: [published]
-
 concurrency:
   group: dist-${{ github.ref }}
   cancel-in-progress: false

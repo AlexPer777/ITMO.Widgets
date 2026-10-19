@@ -7,11 +7,6 @@
 name: android-ui
 
 on:
-  schedule:
-    - cron: "13 2 * * *"
-  pull_request:
-    branches: [master]
-    types: [opened, synchronize, reopened, labeled]
   workflow_dispatch:
     inputs:
       ref:

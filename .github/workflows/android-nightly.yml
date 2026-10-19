@@ -3,8 +3,6 @@
 name: android-nightly
 
 on:
-  schedule:
-    - cron: "23 1 * * *"
   workflow_dispatch:
 
 concurrency:

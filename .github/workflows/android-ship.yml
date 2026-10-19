@@ -7,18 +7,12 @@
 name: android-ship
 
 on:
-  schedule:
-    - cron: "43 2 * * *"
   workflow_dispatch:
     inputs:
       ref:
         description: Branch, tag or SHA to check (default the branch the run starts from)
         required: false
         default: ""
-  pull_request:
-    branches: [master]
-    types: [opened, synchronize, reopened, labeled]
-
 # As android-ui.yml: a PR run without the label gets a group of its own and cancels nothing.
 concurrency:
   group: >-

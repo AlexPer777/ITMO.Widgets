@@ -6,11 +6,6 @@
 name: ios
 
 on:
-  pull_request:
-    branches: [master]
-    types: [opened, synchronize, reopened, labeled]
-  push:
-    branches: [master]
   workflow_dispatch:
 
 # Per ref; a newer push to a PR cancels its older run, every pushed `master` SHA keeps its own result. Adding any
