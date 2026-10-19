@@ -11,7 +11,8 @@
 #   iosApp/build/DerivedData.
 # - CURRENT_PROJECT_VERSION = Android's versionCode in app/build.gradle.kts, the one build number of both platforms,
 #   bumped at release (docs/release.md) and the same in every clone, shallow or a fork's; MARKETING_VERSION comes
-#   from Base.xcconfig (2.3.0). The build
+#   from Base.xcconfig (2.3.0). ITMO_BUILD_NUMBER overrides the build number; dist.yml uses the upstream
+#   commit count so fork-only commits do not increase it. The build
 #   identity (docs/building.md): BuildSource is $GITHUB_REPOSITORY on GitHub Actions, else `local`; BuildCommit the
 #   commit; BuildChannel `custom` for --unsigned, else whatever Signing.local.xcconfig sets (`custom` by default).
 #   --signed and --upload refuse a dirty tree; an --unsigned build of a dirty tree gets `-dirty` in its file name
@@ -74,8 +75,15 @@ source "$script_dir/env.sh"
 # ---- version -------------------------------------------------------------------------------------------------
 
 sha=$(git rev-parse --short=12 HEAD 2> /dev/null) || refuse "not a git checkout"
-build=$(sed -n 's/^ *versionCode = \([0-9][0-9]*\)$/\1/p' app/build.gradle.kts)
-[ -n "$build" ] || refuse "no versionCode in app/build.gradle.kts"
+if [ -n "${ITMO_BUILD_NUMBER:-}" ]; then
+  build=$ITMO_BUILD_NUMBER
+  case "$build" in
+    *[!0-9]* | 0*) refuse "ITMO_BUILD_NUMBER must be a positive integer without leading zeros" ;;
+  esac
+else
+  build=$(sed -n 's/^ *versionCode = \([0-9][0-9]*\)$/\1/p' app/build.gradle.kts)
+  [ -n "$build" ] || refuse "no versionCode in app/build.gradle.kts"
+fi
 source_repo=${GITHUB_REPOSITORY:-local}
 dirty=""
 if [ -n "$(git status --porcelain --untracked-files=no 2> /dev/null)" ]; then

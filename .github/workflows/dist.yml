@@ -2,12 +2,22 @@
 # - apk: the githubRelease APK against production, signed with the runner's debug key (`-Pitmo.selfSigned=true`);
 #   on demand only, a release's APK is the owner's signed upload (docs/release.md).
 # - ipa: `scripts/ios/archive.sh --unsigned`, an .ipa to re-sign with AltStore, SideStore or an own Apple ID; on
-#   demand, and attached to every published release (prereleases included).
+#   demand with iOS selected by default.
 # Both are `custom` builds (BuildChannel) with this repository as BuildSource.
 name: dist
 
 on:
   workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Build platform'
+        type: choice
+        default: ios
+        options:
+          - ios
+          - android
+          - both
+
 concurrency:
   group: dist-${{ github.ref }}
   cancel-in-progress: false
@@ -22,7 +32,7 @@ env:
 
 jobs:
   apk:
-    if: github.event_name == 'workflow_dispatch'
+    if: inputs.platform == 'android' || inputs.platform == 'both'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -45,14 +55,26 @@ jobs:
           retention-days: 30
 
   ipa:
+    if: inputs.platform == 'ios' || inputs.platform == 'both'
     runs-on: xcode-27
     timeout-minutes: 120
     permissions:
-      contents: write # gh release upload
+      contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
+
+      - name: Use upstream commit count as the IPA build number
+        shell: bash
+        run: |
+          git fetch --no-tags https://github.com/alllexey-dev/ITMO.Widgets.git +refs/heads/master:refs/remotes/upstream/master
+          upstream_base=$(git merge-base HEAD refs/remotes/upstream/master)
+          build=$(git rev-list --count "$upstream_base")
+          echo "ITMO_BUILD_NUMBER=$build" >> "$GITHUB_ENV"
+          echo "IPA build number: $build (upstream $upstream_base)"
+          echo "IPA build number: **$build** (upstream commit: $upstream_base)" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Select the pinned Xcode
         run: |
@@ -113,7 +135,20 @@ jobs:
       - name: scripts/ios/archive.sh --unsigned
         env:
           CI: "true"
-        run: scripts/ios/archive.sh --unsigned
+        shell: bash
+        run: |
+          mkdir -p iosApp/build
+          set -o pipefail
+          scripts/ios/archive.sh --unsigned 2>&1 | tee iosApp/build/ipa-build.log
+
+      - name: Upload IPA build log
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: ipa-build-log-${{ github.run_number }}
+          path: iosApp/build/ipa-build.log
+          if-no-files-found: ignore
+          retention-days: 30
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -122,10 +157,3 @@ jobs:
           if-no-files-found: error
           compression-level: 0
           retention-days: 30
-
-      - name: Attach the .ipa to the release
-        if: github.event_name == 'release'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.event.release.tag_name }}
-        run: gh release upload "$TAG" iosApp/build/archive/ITMOWidgets-*-unsigned.ipa --repo "$GITHUB_REPOSITORY" --clobber
