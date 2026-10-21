@@ -354,6 +354,15 @@ private enum FeedItem: Identifiable {
         }
     }
 
+    // Jump to a concrete leaf, never to the union of a Section's header and body.
+    var jumpID: String { "jump-\(id)" }
+
+    func isVisible(in targets: Set<String>) -> Bool {
+        if targets.contains(id) || targets.contains(jumpID) { return true }
+        if case let .day(_, lessons) = self { return targets.contains(lessons.key) }
+        return false
+    }
+
     var date: Kotlinx_datetimeLocalDate {
         switch self {
         case let .label(row): row.date
@@ -389,7 +398,8 @@ private struct ScheduleFeedList: View {
     let state: ScheduleFeedUiState
     let days: ScheduleFeedBodyDays
     let actions: FeedViewActions
-    @State private var top: String?
+    @State private var visibleTargets: Set<String> = []
+    @State private var cancelledJump: Int32?
     @State private var userScrolling = false
     @State private var nearEdge: Edge?
 
@@ -401,11 +411,12 @@ private struct ScheduleFeedList: View {
                     ForEach(items) { item in
                         switch item {
                         case let .label(row):
-                            weekLabel(row.text.resolved).id(item.id).accessibilityIdentifier("schedule.row.\(item.id)")
+                            weekLabel(row.text.resolved).id(item.jumpID).accessibilityIdentifier("schedule.row.\(item.id)")
                         case let .day(header, lessons):
                             Section {
                                 ItmoLessonTimeline(rows: lessons.items.kitRows, showsNow: lessons.showNow) { index in
                                     if let lesson = lessons.items[index] as? TimelineItemLesson {
+                                        cancelJump()
                                         actions.lesson(lesson.lesson.target)
                                     }
                                 }
@@ -413,12 +424,14 @@ private struct ScheduleFeedList: View {
                                 .padding(.bottom, ItmoSpacing.related)
                                 .accessibilityElement(children: .contain)
                                 .accessibilityIdentifier("schedule.day.\(header.date)")
+                                .id(lessons.key)
                             } header: {
-                                dayHeader(header).accessibilityIdentifier("schedule.row.\(item.id)")
+                                dayHeader(header)
+                                    .id(item.jumpID)
+                                    .accessibilityIdentifier("schedule.row.\(item.id)")
                             }
-                            .id(item.id)
                         case let .quiet(_, _, symbol, text):
-                            quietRow(symbol: symbol, text: text).id(item.id).accessibilityIdentifier("schedule.row.\(item.id)")
+                            quietRow(symbol: symbol, text: text).id(item.jumpID).accessibilityIdentifier("schedule.row.\(item.id)")
                         }
                     }
                 }
@@ -426,12 +439,11 @@ private struct ScheduleFeedList: View {
                 .padding(.bottom, 88)
             }
             .accessibilityIdentifier("schedule.list")
-            // Track the visible day without pinning its entire section to the viewport's top on every relayout.
-            // A sheet presentation can change the scroll geometry; only an explicit date jump aligns to .top below.
-            .scrollPosition(id: $top)
-            .onChange(of: top) { _, _ in
-                guard userScrolling else { return }
-                reportVisibleDate(items)
+            // Observation must not own the scroll position. An ID binding can re-anchor a lazy section when a
+            // sheet presents or dismisses, even with a nil anchor. Visibility callbacks never issue a scroll.
+            .onScrollTargetVisibilityChange(idType: String.self, threshold: 0.01) { ids in
+                visibleTargets = Set(ids)
+                if userScrolling { reportVisibleDate(items) }
             }
             .onScrollPhaseChange { _, phase in
                 switch phase {
@@ -439,7 +451,7 @@ private struct ScheduleFeedList: View {
                     guard !userScrolling else { return }
                     userScrolling = true
                     // A real vertical drag takes over from an unfinished date jump, like a week-strip swipe.
-                    actions.pagingStarted()
+                    cancelJump()
                     reportVisibleDate(items)
                     loadNearEdge()
                 case .idle:
@@ -468,12 +480,13 @@ private struct ScheduleFeedList: View {
                 let index = Int(days.indexOf(date: jump.date))
                 if index >= 0, let target = items.first(where: { "\($0.date)" == "\(days.rows[index].date)" }) {
                     await ScheduleFeedScroll.settle(
-                        scroll: {
-                            // The scroll position follows the jump, so rows that load above it later keep it in place.
-                            top = target.id
-                            proxy.scrollTo(target.id, anchor: .top)
+                        scroll: { proxy.scrollTo(target.jumpID, anchor: .top) },
+                        completed: {
+                            // Keep the explicit jump pending until rows loading above it have arrived. A drag or a
+                            // lesson tap cancels it; after acknowledgement nothing keeps re-targeting this day.
+                            if !state.loading { actions.jumped(jump.id) }
                         },
-                        completed: { actions.jumped(jump.id) }
+                        isCurrent: { cancelledJump != jump.id }
                     )
                     return
                 }
@@ -483,8 +496,14 @@ private struct ScheduleFeedList: View {
         }
     }
 
+    private func cancelJump() {
+        // Cancel synchronously in Swift as well as in the ViewModel: its bridged state may arrive a frame later.
+        if let jump = state.jump { cancelledJump = jump.id }
+        actions.pagingStarted()
+    }
+
     private func reportVisibleDate(_ items: [FeedItem]) {
-        guard state.jump == nil, let top, let item = items.first(where: { $0.id == top }) else { return }
+        guard state.jump == nil, let item = items.first(where: { $0.isVisible(in: visibleTargets) }) else { return }
         actions.visible(item.date)
     }
 
