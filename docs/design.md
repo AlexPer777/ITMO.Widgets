@@ -139,7 +139,6 @@ their shapes are `ItmoTheme.shapes` tokens.
 | `Card.CompactSummary` | `cardContent` 20 dp | The recordbook summary row |
 | `Card.Summary` | `cardSummary` 28 dp, 20 dp padding | The sport score card of `Моё` and the formula of `Откуда баллы` (`ScoreCard`, `ItmoCard(hero = true)`) |
 | `Card.Hero` | `cardHero` 28 dp, `surfaceContainer`, no stroke | The subject result and the person on a profile, above the page's connected groups |
-| `Card.SettingsGroup` | 20 dp, no stroke, inner dividers | One card per settings or profile group, never per row (the kit's `SettingsGroup`) |
 | `Card.ScheduleDay` | `scheduleDay` 16 dp, 16 dp between days | A day of lessons with its timeline (`ScheduleDayCard`) |
 
 ### Connected groups
@@ -223,8 +222,9 @@ through constraints, wrapping, font metrics and insets, never with a fixed heigh
   private row never looks selectable.
 - The bottom navigation is M3E's `ShortNavigationBar` with a label on every tab;
   a long label ellipsizes instead of overlapping its neighbours. Tab roots have
-  the root header ([Shell](#shell)); contextual screens use a back button and a
-  concise title (`AppTopBar`, `ItmoDetailScreen` for the redesigned ones).
+  the root header ([Shell](#shell)); pushed screens use `ItmoDetailScreen`
+  (back, the title and its subtitle). `AppTopBar` stays only on the WebView
+  screens with a close button (My ITMO, the web sign-in).
 
 ## Refresh and loading
 
@@ -359,7 +359,7 @@ drawing its own variant.
 
 | Component | Use |
 |---|---|
-| `AppTopBar`, `AppTopBarAction` | Contextual screen: back or close, a title of up to two lines (one over an optional one-line subtitle, such as the My ITMO page's host), trailing actions |
+| `AppTopBar`, `AppTopBarAction` | The WebView screens with a close button (My ITMO, the web sign-in): close, a title of up to two lines (one over an optional one-line subtitle, the page's host), trailing actions; every other pushed screen is `ItmoDetailScreen` |
 | `ItmoNavigationBar`, `ItmoNavigationBarItem` | Root tabs: M3E's `ShortNavigationBar`, a label on every tab, the FILL 1 icon on the selected one |
 | `ContentState`, `ContentStateLoading` | Full and compact loading, empty and error states with an optional action |
 | `Skeleton` | First load without a cache, list or cards |
@@ -376,12 +376,10 @@ drawing its own variant.
 | `SectionHeading`, `SectionSubheading` | The heading over a group; a sub-heading with its value |
 | `GroupActionRow` | The last row of a group that leads further |
 | `LinkRow`, `VotePill` | A link with its own badge; the one vote pill of links and reviews: like and dislike thumbs around the score, the own vote filled and in `primary`, only the score when voting is not allowed |
-| `SettingsGroup`, `SettingsGroupFooter`, `SettingsRow` and its toggle, choice, navigation, info, action and selection variants | Settings and profile groups, one card per group |
 | `DetailsHeader` | The head of every details sheet |
 | `SheetScaffold`, `SheetHandle` | A bottom sheet body: handle, header, one bounded content area (288 dp minimum where states switch), footer |
 | `ConfirmDialog`, `ChoiceDialog`, `ReportDialog` | A confirmation, a single choice, reporting a review or a link |
 | `InfoDialog` | A message with one button |
-| `SwatchChoiceDialog` | A choice among colours: named swatches in a grid, the picked name under it; a tap applies and the dialog stays until its button |
 | `ItmoMenu` | The one menu of actions anchored to its parent, groups with separators, destructive items in the error colour |
 | `ScoreRing` | The sport score ring |
 | `GradeScale` | A 0-100 bar with grade ticks |
@@ -439,8 +437,7 @@ The Android shell (`app/shell/`, [architecture](architecture.md#navigation)) is 
 ## The M3 Expressive kit
 
 `designsystem.kit` (`shared/designsystem/.../kit/`) is the kit of the redesigned Android screens, ported from the
-design lab: Material 3 Expressive, Android's only (its previews are captured only in the four Material appearances,
-`materialOnlyPackageTrees`); iOS draws the same screens in SwiftUI ([ADR 0031](decisions/0031-swiftui-ios-screens.md)). Its components take formatted text, icons and colours;
+design lab: Material 3 Expressive; iOS draws the same screens in SwiftUI ([ADR 0031](decisions/0031-swiftui-ios-screens.md)). Its components take formatted text, icons and colours;
 what a lesson says and which pills it gets is decided by shared presentation: `core/lesson/LessonTimelines` builds
 `LessonUi` and `TimelineItem` (states, pills, gaps of an hour or more, progress, change notes) for every lesson list;
 a lesson is online by MyITMO's remote format or by a placeholder room (`дистант`, `онлайн`, `DayLesson.isOnline`),
@@ -468,12 +465,6 @@ one, otherwise from [Shared components](#shared-components).
 | `ValueWithSource`, `PointsMeter`, `SportRing`, `Tone.ink()` | A row's number over its quiet source (`БАРС`, `My ITMO`, `таблица`; a warning colour when stale, tappable to its sources); points over a 0-100 bar in a tone; the sport points in a small ring of visits and bonus; text in a tone on a plain surface |
 | `SearchField`, `FilterChips`, `ChipSpec`, `OccupancyBar` | The search of a list as a pill with a clear button and a trailing action with a badge (more filters); filter chips in a sideways row or wrapped; places taken as a bar (88 dp, down to 44 dp in a tight row; the text never wraps) and `22 из 24` in a tone |
 | `WeekStrip`, `WeekStripDay` | Past weekday/date labels are dimmed on both platforms; today and the selected day (including a past selection) keep full emphasis. One week as seven targets: weekday, date, a dot per lesson, today in `primary`, the chosen day on a `primary` indicator that slides on the scheme's default spatial spring while the colours crossfade (a week gaining or losing the choice fades it in place; snaps under reduced motion); a pager of these pages by weeks |
-
-## Platform styles
-
-`ItmoPlatformStyle` still has an `Ios` value with branches in the kit and `_ios-*` baselines, but only Android renders
-the kit (`defaultPlatformStyle()` is `Material`; iOS draws no Compose, [ADR 0035](decisions/0035-ios-without-compose.md)).
-It is a leftover: a new component needs no `Ios` branch. The SwiftUI look of iOS is in [iOS app](ios.md#design-system).
 
 ## Expressive components
 
@@ -577,8 +568,11 @@ The screens that show a rule of this guide best; read them before building a sim
 - Sheets on `SheetScaffold`: `BellSheetContent`, `SheetScoresSheet` (one bounded area of at least 288 dp for loading,
   failures and the choices), `IcsExportSheetContent`, `SubjectLinksSheetContent`, the lesson sheet (`ui/lesson/LessonSheet.kt`,
   the `Изменения` group with `было -> стало` rows).
-- Settings: `SettingsScreen` on `SettingsGroup` and `SettingsRow`, `ConnectionScreen` and
-  `NotificationSettingsScreen` (`:shared:feature-settings`).
+- Settings: `SettingsScreen` (every page of `SettingsViewModel`, its rows through `SettingSectionView`: `ListGroup`,
+  `ListRow` / `SwitchListRow` with the row's icon in a neutral tile, `SegmentedChoice`, `ListGroupNote`),
+  `AppearanceScreen` (the light and dark sample, named colour circles, the palettes as a sideways row),
+  `ConnectionScreen`, `NotificationSettingsScreen` and `DiagnosticsScreen` (`:shared:feature-settings`), all on
+  `ItmoDetailScreen`.
 - Reviews: `TeacherReviewRow`, `OwnTeacherReviewRow` (a status pill as a 12 % wash of its tone: content-based palettes
   make `...Container` colours too dark as text), `TeacherSummaryCard` (`Card.Content.Tonal`), `ReviewEditorSheet`
   (asks `Не сохранять отзыв?` only when something changed).

@@ -14,11 +14,11 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.Density
-import dev.alllexey.itmowidgets.designsystem.platform.ItmoPlatformStyle
 import dev.alllexey.itmowidgets.designsystem.theme.ItmoTheme
 import dev.alllexey.itmowidgets.feature.settings.presentation.DiagnosticsUiState
 import dev.alllexey.itmowidgets.testkit.assertNoTextOverflow
@@ -87,7 +87,7 @@ class DiagnosticsScreenTest {
         state = DiagnosticsUiState.Content(DiagnosticsSamples.entries)
         compose.waitForIdle()
         compose.onNodeWithTag(DiagnosticsTestTags.COPY).assertIsEnabled().performClick()
-        compose.onNodeWithTag(DiagnosticsTestTags.BACK).performClick()
+        compose.onNodeWithContentDescription("Назад").performClick()
         assertEquals(1, copies)
         assertEquals(1, backs)
         assertEquals(0, clears)
@@ -129,7 +129,7 @@ class DiagnosticsScreenTest {
         compose.setContent {
             val density = LocalDensity.current
             CompositionLocalProvider(LocalDensity provides Density(density.density, LARGE_FONT)) {
-                ItmoTheme(platformStyle = ItmoPlatformStyle.Material) {
+                ItmoTheme {
                     DiagnosticsScreen(state, actions, DiagnosticsSamples::timeLabel)
                 }
             }
