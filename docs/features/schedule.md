@@ -174,6 +174,12 @@ otherwise; iOS always opens this sheet.
 
 ## iOS
 
+The feed tracks the visible section without a persistent top anchor. Only an explicit date jump aligns a day to
+`.top`; opening or dismissing a lesson sheet preserves the current position within the day. Visible-date updates
+and edge pagination follow real vertical drags/deceleration, not layout changes during a sheet transition. A
+vertical drag also cancels a pending date jump. `ScheduleUITests.testRepeatedLessonSheetsKeepTheFeedPosition`
+checks three open/close cycles on today and after a partial scroll, measuring the same lesson's frame each time.
+
 SwiftUI over the same view models ([iOS app](../ios.md)): `ScheduleScreen.swift` has the feed, `ScheduleSheets.swift`
 the lesson sheet, the month sheet and the friend picker (`Routes+Schedule.swift`). The week strip stays a few points
 off the bar above it: a scroll view touching the bar's edge takes the bar's height as a vertical content inset and

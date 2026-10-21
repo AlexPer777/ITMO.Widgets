@@ -11,6 +11,9 @@ on Android and native SwiftUI screens in a new iOS app. Android keeps the featur
 
 ### iOS app
 
+- The schedule keeps its position when opening and closing lesson details: passive scroll tracking no longer
+  top-aligns a day section, and sheet layout changes do not trigger edge pagination or change the selected date.
+
 - A new app for iOS 26.1 and later: a Liquid Glass tab bar `Сегодня`, `Расписание`, `Зачётка`, `Спорт`, `Профиль`,
   native SwiftUI screens over the same view models as Android; sheets open at the content's height, 0.82 of the
   screen or full.

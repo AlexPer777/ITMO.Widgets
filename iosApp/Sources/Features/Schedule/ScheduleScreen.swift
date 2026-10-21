@@ -390,6 +390,8 @@ private struct ScheduleFeedList: View {
     let days: ScheduleFeedBodyDays
     let actions: FeedViewActions
     @State private var top: String?
+    @State private var userScrolling = false
+    @State private var nearEdge: Edge?
 
     var body: some View {
         let items = FeedItem.of(days.rows)
@@ -424,10 +426,28 @@ private struct ScheduleFeedList: View {
                 .padding(.bottom, 88)
             }
             .accessibilityIdentifier("schedule.list")
-            .scrollPosition(id: $top, anchor: .top)
-            .onChange(of: top) { _, id in
-                guard state.jump == nil, let id, let item = items.first(where: { $0.id == id }) else { return }
-                actions.visible(item.date)
+            // Track the visible day without pinning its entire section to the viewport's top on every relayout.
+            // A sheet presentation can change the scroll geometry; only an explicit date jump aligns to .top below.
+            .scrollPosition(id: $top)
+            .onChange(of: top) { _, _ in
+                guard userScrolling else { return }
+                reportVisibleDate(items)
+            }
+            .onScrollPhaseChange { _, phase in
+                switch phase {
+                case .interacting, .decelerating:
+                    guard !userScrolling else { return }
+                    userScrolling = true
+                    // A real vertical drag takes over from an unfinished date jump, like a week-strip swipe.
+                    actions.pagingStarted()
+                    reportVisibleDate(items)
+                    loadNearEdge()
+                case .idle:
+                    if userScrolling { reportVisibleDate(items) }
+                    userScrolling = false
+                default:
+                    userScrolling = false
+                }
             }
             .onScrollGeometryChange(for: Edge?.self) { geometry in
                 if geometry.contentOffset.y + geometry.containerSize.height > geometry.contentSize.height - 400 {
@@ -435,12 +455,9 @@ private struct ScheduleFeedList: View {
                 }
                 return geometry.contentOffset.y < 40 ? .top : nil
             } action: { _, edge in
-                guard state.jump == nil else { return }
-                switch edge {
-                case .bottom: actions.nearEnd()
-                case .top: actions.nearStart()
-                default: break
-                }
+                nearEdge = edge
+                // Layout and safe-area changes while opening/closing a sheet are not requests for more weeks.
+                if userScrolling { loadNearEdge() }
             }
             .task(id: "\(state.jump?.id ?? -1)-\(days.rows.count)-\(state.loading)") {
                 // Before the first load the feed has no rows yet: keep the jump (today on launch) for the rows to come.
@@ -463,6 +480,20 @@ private struct ScheduleFeedList: View {
                 guard !Task.isCancelled else { return }
                 actions.jumped(jump.id)
             }
+        }
+    }
+
+    private func reportVisibleDate(_ items: [FeedItem]) {
+        guard state.jump == nil, let top, let item = items.first(where: { $0.id == top }) else { return }
+        actions.visible(item.date)
+    }
+
+    private func loadNearEdge() {
+        guard state.jump == nil else { return }
+        switch nearEdge {
+        case .bottom: actions.nearEnd()
+        case .top: actions.nearStart()
+        default: break
         }
     }
 
