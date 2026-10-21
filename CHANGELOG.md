@@ -11,8 +11,6 @@ on Android and native SwiftUI screens in a new iOS app. Android keeps the featur
 
 ### iOS app
 
-- Teacher rows in a lesson sheet and a subject resolve and cache photos when shown, without opening the teacher profile.
-
 - A new app for iOS 26.1 and later: a Liquid Glass tab bar `Сегодня`, `Расписание`, `Зачётка`, `Спорт`, `Профиль`,
   native SwiftUI screens over the same view models as Android; sheets open at the content's height, 0.82 of the
   screen or full.
@@ -34,6 +32,10 @@ on Android and native SwiftUI screens in a new iOS app. Android keeps the featur
 - The session and BARS Keychain items stay on this device only, so a backup no longer restores them on another one.
 
 ### Shell and look
+
+- Android and iOS show teacher photos in the lesson sheet and subject page without opening a profile first. Shared
+  ViewModels resolve directory URLs through a core port, reuse the session's person cache and coalesce lookups
+  (up to four at once); the platforms keep their standard avatar loaders and initials as a fallback.
 
 - Five tabs `Зачётка`, `Расписание`, `Сегодня`, `Спорт`, `Профиль` with a static one-line header the content scrolls
   under; on Android the Material 3 Expressive bar, tabs switch by a tap only and keep their scroll and state.
