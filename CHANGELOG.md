@@ -11,6 +11,8 @@ on Android and native SwiftUI screens in a new iOS app. Android keeps the featur
 
 ### iOS app
 
+- Teacher rows in a lesson sheet and a subject resolve and cache photos when shown, without opening the teacher profile.
+
 - A new app for iOS 26.1 and later: a Liquid Glass tab bar `Сегодня`, `Расписание`, `Зачётка`, `Спорт`, `Профиль`,
   native SwiftUI screens over the same view models as Android; sheets open at the content's height, 0.82 of the
   screen or full.
