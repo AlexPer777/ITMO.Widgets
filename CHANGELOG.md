@@ -21,6 +21,8 @@ on Android and native SwiftUI screens in a new iOS app. Android keeps the featur
   actions on the app icon.
 - Widgets `Пара`, `Расписание на день`, `Список пар`, `Спорт` and Lock Screen widgets read a timeline the app
   precomputes to the end of tomorrow, so they switch lessons without waking the app.
+- The small and medium `Пара` widgets no longer go blank or flicker during a lesson: the progress bar and the Lock
+  Screen ring move with the timeline's 5-minute ticks instead of a system timer; the countdown stays live.
 - Background refresh checks schedule changes and new marks (My ITMO, BARS, connected sheets) with Android's periods
   and texts; what is found at night arrives at 06:00, and a tap on a notification opens the screen it is about.
 - The notification service books a freed sport place as Android does, never for another account, the demo or
@@ -44,6 +46,9 @@ on Android and native SwiftUI screens in a new iOS app. Android keeps the featur
   choice and `Чёрный фон`. Under `Монохром` the colours are dimmed with a line why. The defaults keep the look of 2.2;
   below Android 12 and on iOS the app is brand blue instead of the baseline purple. On iOS the colours reach the
   widgets only, which the page says.
+- `Тема` on `Оформление`: `Системная` (the default), `Светлая` or `Тёмная` for the app on both platforms, applied at
+  once and kept on sign-out. The sample shows only the kept theme on Android; `Светлая` hides `Чёрный фон`. Widgets
+  stay light or dark as the system is.
 - Material 3 Expressive: every bottom tab shows its label, the morphing loading indicator, a little expressive
   motion; reduced motion shows end states at once. Tonal buttons use the accent instead of a disabled-looking grey.
 - Every icon is a Material Symbols Rounded glyph; the selected tab shows the filled one. Android avatars are M3
@@ -175,6 +180,10 @@ on Android and native SwiftUI screens in a new iOS app. Android keeps the featur
 
 ### Fixes
 
+- `Устройства`: `Отключить` ends the client's ITMO.ID session every time (MyItmoApi 2.3.1 accepts session ids with
+  `_`); earlier sign-ins of the same phone no longer show as other devices; this phone is named as in its settings;
+  the screen reloads a moment after a change; the pull indicator is no longer cut by the header.
+- A list row with a long value (`Вход виден как`) wraps the value instead of squeezing the title, on both platforms.
 - Recordbook exams and coursework sharing a My ITMO entry ID keep their own labels, scores, attention state and
   subject pages on Android and iOS.
 - When ITMO.ID rejects the refresh token the session ends with a message; a timeout or a server error keeps it.

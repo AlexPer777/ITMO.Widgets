@@ -148,7 +148,9 @@ without the filtering entitlement lists no push switch ([Degradations](#degradat
 `AppearanceScreen` over `AppearanceViewModel`. The first two report the system state as `SettingsScreen` does. The
 app's own screens keep the system's colours (`PlatformCapabilities.appColors` is off), so `AppearanceScreen` draws its
 sample as a widget, the one thing the colours reach, from `AppearanceColors` (the widgets' scheme, without Compose),
-and offers no black background ([settings](settings.md#ios-1)).
+and offers no black background ([settings](settings.md#ios-1)). Its `Тема` reaches the app through `ShellView`, which
+follows `AppearancePreferences.observeTheme()` and sets `preferredColorScheme` on the root, so sheets and alerts take
+it too; the widgets keep the system's.
 
 ## Connected clients
 
@@ -288,8 +290,9 @@ The widget extension reads App Group files on each timeline request and makes no
   gaps, and the now line (kind `.widget.day-timeline`). The classic list (`ClassicListWidget`, kind
   `.widget.day-schedule`, medium and large) draws the same day content as rows: the header, the lessons that fit (done
   ones leave first) and the end. All three read schedule-timeline-v2.json in `Extensions/Widgets/Schedule/`: Swift picks the entry
-  whose `validFrom` has passed and, inside it, the last `nowTicks` minute; countdowns and progress are the system's
-  live views on `until` and `since` (`WidgetCountdown`, `WidgetLessonProgress`), so Swift computes no time.
+  whose `validFrom` has passed and, inside it, the last `nowTicks` minute; countdowns are the system's live text on
+  `until` (`WidgetCountdown`) and the lesson's progress is drawn at each entry's date (`WidgetLessonProgress`), so
+  Swift computes no time.
 - Sport widget (`Extensions/Widgets/Sport/`, medium and small): the score ring, the remaining points and the nearest
   bookings or queues from sport-widget-v1.json.
 - The picker names of the next-lesson, day and sport widgets end in `(бета)` (`widget_*_name`), as the gallery's `Бета`
