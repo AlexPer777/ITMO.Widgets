@@ -25,6 +25,7 @@ import dev.alllexey.itmowidgets.core.storage.AppDirectories
 import dev.alllexey.itmowidgets.core.storage.AppGroupDirectory
 import dev.alllexey.itmowidgets.core.storage.AppGroupSnapshotWriter
 import dev.alllexey.itmowidgets.core.storage.InstallIdPreferences
+import dev.alllexey.itmowidgets.core.storage.WidgetReloader
 import dev.alllexey.itmowidgets.core.testing.FakeBackendGate
 import dev.alllexey.itmowidgets.core.testing.FakeDemoMode
 import dev.alllexey.itmowidgets.core.testing.FakeSessionRepository
@@ -41,10 +42,10 @@ import dev.alllexey.itmowidgets.feature.update.di.updateModule
 import dev.alllexey.itmowidgets.feature.update.domain.AppUpdate
 import dev.alllexey.itmowidgets.feature.update.domain.AppVersionName
 import dev.alllexey.itmowidgets.feature.update.domain.PendingAppUpdate
-import dev.alllexey.itmowidgets.feature.weblogin.data.PairingHost
-import dev.alllexey.itmowidgets.feature.weblogin.di.webLoginDataModule
-import dev.alllexey.itmowidgets.feature.weblogin.di.webLoginIosModule
-import dev.alllexey.itmowidgets.feature.weblogin.di.webLoginModule
+import dev.alllexey.itmowidgets.feature.connections.data.PairingHost
+import dev.alllexey.itmowidgets.feature.connections.di.connectionsDataModule
+import dev.alllexey.itmowidgets.feature.connections.di.connectionsIosModule
+import dev.alllexey.itmowidgets.feature.connections.di.connectionsModule
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respondError
@@ -178,7 +179,7 @@ class AccountIosModuleTest {
 
     private fun accountGraph(vararg overrides: Module): Koin = graph(
         iosCoreModule(FakeHost(), ORIGIN), authDataModule, accountIosModule,
-        webLoginDataModule, webLoginModule, webLoginIosModule(NoPairingHost), updateModule, updateIosModule,
+        connectionsDataModule, connectionsModule, connectionsIosModule(NoPairingHost), updateModule, updateIosModule,
         testDevice(), *overrides,
     )
 
@@ -196,7 +197,8 @@ class AccountIosModuleTest {
         UnconfinedTestDispatcher()
     ) {
         val session = FakeSessionRepository(SessionState.Initializing)
-        val writer = SessionSnapshotWriter(AppGroupSnapshotWriter(appGroup, reloader = {}))
+        val reloaded = mutableListOf<String>()
+        val writer = SessionSnapshotWriter(AppGroupSnapshotWriter(appGroup, reloader = { reloaded += it }))
         SessionSnapshotSync(
             session, MutableStateFlow(false), MutableStateFlow(false), MutableStateFlow(emptySet()), { INSTALL_ID }, writer, log,
         )
@@ -208,6 +210,8 @@ class AccountIosModuleTest {
             SessionSnapshot(isu = DemoPeople.ME.isu, demo = true, alertsAllowed = false, servicesEnabled = false),
             writer.read()
         )
+        // Widgets placed while signed out leave their signed-out timeline at once.
+        assertEquals(WidgetReloader.ALL_KINDS, reloaded)
 
         // Sign-out: the App Group cleaner removes the file, no state writes it.
         session.mutableState.value = SessionState.SigningOut

@@ -86,7 +86,7 @@ The root is the SwiftUI shell in `iosApp/Sources/App/Shell/`.
   which returns `.swiftUI` (pushed under the native bar), `.sheet`, `.swiftUISheet`, a tab,
   the gate or `.notOnIOS`. `RouterTests` fails for a key no feature claims.
 - Debug launch arguments replace Android's debug tools: `-itmoDemo`, `-itmoSignedOut`, `-itmoShellSession <state>`,
-  `-itmoOnboarding`, `-itmoRunRefresh`, `-itmoNotificationFixture <kind>`, `-itmoWebLoginFixture`, `-itmoBarsLogin`,
+  `-itmoOnboarding`, `-itmoRunRefresh`, `-itmoNotificationFixture <kind>`, `-itmoBarsLogin`,
   `-itmoAcademicDate <yyyy-mm-dd>` (the academic date at the real wall time, Android's test academic date),
   `-itmoSlowRefresh` (a pull's spinner stays 5 s).
 
@@ -149,6 +149,22 @@ without the filtering entitlement lists no push switch ([Degradations](#degradat
 app's own screens keep the system's colours (`PlatformCapabilities.appColors` is off), so `AppearanceScreen` draws its
 sample as a widget, the one thing the colours reach, from `AppearanceColors` (the widgets' scheme, without Compose),
 and offers no black background ([settings](settings.md#ios-1)).
+
+## Connected clients
+
+The profile's `Устройства` row (`AppRoutes.Devices`) pushes `DevicesScreen` (`Features/Connections/`) over the shared
+`DevicesViewModel`; a client pushes `ConnectedClientScreen` (`AppRoutes.Connection`) over `ConnectedClientViewModel`
+(Koin parameters `ConnectionsIosParameters.connection(id)`), and `AppRoutes.Pairing` is the route sheet
+`PairingSheet` over `PairingViewModel` ([connected clients](features/connections.md)).
+
+- The scanner is VisionKit's `DataScannerViewController` (`PairingScanner`), behind the camera permission; without it
+  the sheet takes a pasted link.
+- The screen lock (`DeviceUnlock`) and HPKE are the app's `PairingHost` (`Pairing.swift`: LocalAuthentication,
+  CryptoKit), bound in Koin by `connectionsIosModule`.
+- A client's ITMO.ID sign-in (`ClientSignInPage`) is a full-screen `WKWebView` on `WKWebsiteDataStore.nonPersistent()`
+  with the ViewModel's User-Agent; every main-frame navigation goes to `onSignInNavigation` first, and only https
+  loads. The app's own sign-in page (`ItmoSignInBrowser`) sets its User-Agent with `appSignInUserAgent` from the
+  `devices_browser_like` switch.
 
 ## Strings and icons
 
@@ -238,13 +254,16 @@ Kotlin platform classes live in `shared/core/src/iosMain/` and run only in the a
 files are in the app container (`IosAppDirectories`); DataStore never leaves it.
 
 App Group files (`AppGroupDirectory`; an unsigned build without the group falls back to a private directory and the
-extensions see nothing). Snapshots are `{"version": N, ...}`, written to a temporary file and renamed, then the
+extensions see nothing). Each process looks the container up by its own `AppGroupID`, then `ALTAppGroups`, then the
+groups of its own `embedded.mobileprovision`: AltStore and SideStore re-sign the group into `<group>.<TEAMID>`, and
+SideStore (since its 2026-09-15 builds) no longer lists it in `ALTAppGroups` (`BundleIdentifiers`,
+`AppGroupSnapshot.groupCandidates`). Snapshots are `{"version": N, ...}`, written to a temporary file and renamed, then the
 writer reloads the widget kinds through `WidgetReloader`. A reader treats a missing, corrupt or newer file as its
 placeholder state (`AppGroupSnapshot`, `SnapshotReaderTests`).
 
 | File | Written by | Read by |
 |---|---|---|
-| session-v1.json | `SessionSnapshotWriter` on every session change | widgets, notification service |
+| session-v1.json | `SessionSnapshotWriter` on every session change, reloading every widget kind | widgets, notification service |
 | qr-pass-v1.json | `QrPassSnapshotWriter` (`:shared:feature-qr`) | QR widget |
 | qr-widget-v1.json | `RevealQrIntent` in the widget extension | QR widget |
 | schedule-timeline-v2.json | `ScheduleTimelineWriter` (`:shared:feature-schedule`) on the session, widget options, foreground, cached schedule and after a booking | next-lesson and day widgets |
