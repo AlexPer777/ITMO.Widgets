@@ -70,13 +70,16 @@ additive fields and goes up for a rename or removal; readers accept only their o
 `shared/feature-schedule/fixtures/schedule-widget-timeline-v2.json`. Countdowns are system live text on iOS
 (`until`, `since`); Swift takes no time decision.
 
-The iOS lesson progress uses the system linear or circular style directly on `ProgressView(timerInterval:)`.
-Date-relative progress does not support custom `ProgressViewStyle`s, including wrappers around system styles.
-The gallery and image baselines use a frozen clock and a value-based progress view, so they do not exercise this
-live path. `WidgetLiveProgressTests` additionally renders both live styles before, during and after their interval.
-This is an app-hosted rendering smoke test; WidgetKit's separate extension/archiving path still needs a device check:
-place both the lesson and day widgets, check before the first lesson, during it and in a gap, and check the Lock
-Screen ring. Repeat with the app's theme on and off; inspect the widget extension's device log if a tile goes blank.
+The iOS lesson progress is value-based: `ProgressView(value:)` in the home-screen widget and a `Gauge` on the Lock
+Screen. It uses the timeline entry's date (the frozen sample's date in the gallery), advancing at the precomputed
+5-minute ticks and lesson boundaries. The countdown text remains live. The active lesson's footer reserves 24 pt
+for the progress bar; its label can shrink to the space left instead of forcing its full intrinsic width.
+`WidgetLessonProgressTests` renders both styles before, during and after their interval; `ScheduleTimelineTests`
+checks that the progress advances with the real fixture's ticks. Hosted renders do not exercise WidgetKit archives.
+The value-based rendering and bounded footer still need device confirmation for the reported blank tiles.
+Check both home-screen sizes before
+the first lesson, during it and in a gap, with the app's theme on/off, and the Lock Screen ring. If it still fails,
+collect the widget extension's device log before making further rendering changes.
 
 ## Sport widget
 

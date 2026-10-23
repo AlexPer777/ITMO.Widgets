@@ -3,21 +3,37 @@ import SwiftUI
 import UIKit
 import XCTest
 
-/// The gallery's frozen clock uses a different, value-based ProgressView. Exercise the date-relative view too,
-/// without a custom spinner style from the snapshot harness. These are hosted render tests, not WidgetKit archives.
+/// Placed widgets and the gallery use the same progress view. These are hosted render tests, not WidgetKit archives.
 @MainActor
-final class WidgetLiveProgressTests: XCTestCase {
-    func testLiveBarRendersBeforeDuringAndAfterTheLesson() async throws {
-        try await assertLiveProgress(ring: false, size: CGSize(width: 140, height: 30))
+final class WidgetLessonProgressTests: XCTestCase {
+    func testBarRendersBeforeDuringAndAfterTheLesson() async throws {
+        try await assertProgress(ring: false, size: CGSize(width: 140, height: 30))
     }
 
-    func testLiveRingRendersBeforeDuringAndAfterTheLesson() async throws {
-        try await assertLiveProgress(ring: true, size: CGSize(width: 60, height: 60))
+    func testRingRendersBeforeDuringAndAfterTheLesson() async throws {
+        try await assertProgress(ring: true, size: CGSize(width: 60, height: 60))
     }
 
-    private func assertLiveProgress(ring: Bool, size: CGSize) async throws {
+    func testProgressIsBoundedAtLessonTransitions() {
+        let start = Date(timeIntervalSince1970: 1_792_991_400)
+        let end = start.addingTimeInterval(5_400)
+        for (offset, expected) in [(-60.0, 0.0), (0, 0), (1_440, 24.0 / 90), (5_400, 1), (5_460, 1)] {
+            XCTAssertEqual(
+                WidgetLessonProgress.fraction(since: start, until: end, at: start.addingTimeInterval(offset)),
+                expected, accuracy: 0.000_001
+            )
+        }
+    }
+
+    func testInvalidLessonIntervalsHaveFiniteProgress() {
+        let now = Date(timeIntervalSince1970: 1_792_991_400)
+        XCTAssertEqual(WidgetLessonProgress.fraction(since: now, until: now, at: now), 0)
+        XCTAssertEqual(WidgetLessonProgress.fraction(since: now, until: now.addingTimeInterval(-60), at: now), 0)
+    }
+
+    private func assertProgress(ring: Bool, size: CGSize) async throws {
         let blank = try await render(Color.black, size: size)
-        let now = Date()
+        let now = Date(timeIntervalSince1970: 1_792_991_400)
         let intervals: [(String, TimeInterval, TimeInterval)] = [
             ("before", 600, 6_000),
             ("during", -1_440, 3_960),
@@ -25,10 +41,10 @@ final class WidgetLiveProgressTests: XCTestCase {
         ]
         for (state, start, end) in intervals {
             let progress = WidgetLessonProgress(
-                since: now.addingTimeInterval(start), until: now.addingTimeInterval(end), clock: .live, ring: ring
+                since: now.addingTimeInterval(start), until: now.addingTimeInterval(end), date: now, ring: ring
             )
             let image = try await render(progress, size: size)
-            XCTAssertNotEqual(image, blank, "The live progress is empty \(state) the lesson (ring: \(ring))")
+            XCTAssertNotEqual(image, blank, "The progress is empty \(state) the lesson (ring: \(ring))")
         }
     }
 
@@ -53,7 +69,7 @@ final class WidgetLiveProgressTests: XCTestCase {
             window.windowScene = nil
             previousKeyWindow?.makeKey()
         }
-        // Let SwiftUI mount the live system progress view, without comparing timer-dependent pixels to a baseline.
+        // Let SwiftUI mount the progress view before drawing the window.
         try await Task.sleep(for: .milliseconds(100))
         host.view.layoutIfNeeded()
         let format = UIGraphicsImageRendererFormat()
