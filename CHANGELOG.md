@@ -21,6 +21,8 @@ on Android and native SwiftUI screens in a new iOS app. Android keeps the featur
   actions on the app icon.
 - Widgets `Пара`, `Расписание на день`, `Список пар`, `Спорт` and Lock Screen widgets read a timeline the app
   precomputes to the end of tomorrow, so they switch lessons without waking the app.
+- iOS: the current lesson's live progress uses native linear/circular styles directly, removing the unsupported
+  custom style wrapper used only while a lesson is in progress. Live rendering smoke tests cover both styles.
 - Background refresh checks schedule changes and new marks (My ITMO, BARS, connected sheets) with Android's periods
   and texts; what is found at night arrives at 06:00, and a tap on a notification opens the screen it is about.
 - The notification service books a freed sport place as Android does, never for another account, the demo or

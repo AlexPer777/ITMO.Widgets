@@ -308,8 +308,13 @@ struct WidgetLessonProgress: View {
     var body: some View {
         switch clock {
         case .live:
-            ProgressView(timerInterval: since...until, countsDown: false) {} currentValueLabel: { EmptyView() }
-                .progressViewStyle(ring ? AnyProgressViewStyle.circular : .linear)
+            // Date-relative progress supports system styles only, including when a custom style would
+            // merely forward its configuration to another ProgressView. Apply each native style directly.
+            if ring {
+                timer.progressViewStyle(.circular)
+            } else {
+                timer.progressViewStyle(.linear)
+            }
         case let .frozen(now):
             let elapsed = min(max(now.timeIntervalSince(since) / until.timeIntervalSince(since), 0), 1)
             if ring {
@@ -319,17 +324,8 @@ struct WidgetLessonProgress: View {
             }
         }
     }
-}
 
-/// The two system progress styles behind one type.
-enum AnyProgressViewStyle: ProgressViewStyle {
-    case linear
-    case circular
-
-    func makeBody(configuration: Configuration) -> some View {
-        switch self {
-        case .linear: ProgressView(configuration).progressViewStyle(.linear)
-        case .circular: ProgressView(configuration).progressViewStyle(.circular)
-        }
+    private var timer: some View {
+        ProgressView(timerInterval: since...until, countsDown: false) {} currentValueLabel: { EmptyView() }
     }
 }
