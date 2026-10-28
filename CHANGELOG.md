@@ -133,6 +133,10 @@ on Android and native SwiftUI screens in a new iOS app. Android keeps the featur
   ITMO.Widgets`, then `Преподавание` (the lesson they give now, the subjects they teach you, the AI summary and
   reviews) and `Учёба` (groups, schedule, sport and friends you may open). Someone's hidden data is simply absent.
 - Another user's sport is titled `Спорт` with their given name after it and shows lesson cards.
+- Reviews of sport coaches: the editor asks Backend for subject suggestions when it opens
+  (`GET /api/teachers/{isu}/reviews/hints`), merged with the subjects of your own lessons; a new review of a coach
+  starts with `Физическая культура`, which you can change. Backend verifies reviews of coaches of its sport catalog
+  at once and lists coaches as teachers, so `Написать` appears in a coach's profile (Backend ADR 0037).
 - Teachers in the lesson sheet and on the subject page show their My ITMO photo, initials without one.
 - `Устройства` (a Профиль row with the count and a warning) lists this phone, your other app installs, connected
   clients (agents, MCP servers, browsers) and every other ITMO.ID sign-in of the account, with IP addresses as
@@ -143,6 +147,12 @@ on Android and native SwiftUI screens in a new iOS app. Android keeps the featur
   a separate empty browser store, the password stays on the phone, and the session is sealed end to end to the
   device. A client's screen shows its ITMO sign-in, its access as switches (more access asks for the screen lock),
   `Обновить вход` and `Отключить`, which also ends its ITMO session.
+- `Wi-Fi` (a Профиль row under `Карта`) shows the `ITMO-Corp` login and password from ISU, read on the phone with
+  the ITMO.ID sign-in it already has; the password is hidden until shown, both copy. On Android `Подключиться` saves the
+  network with the system's dialog on 11+ (PEAP, the server checked by `wifi.it.itmo.ru`); elsewhere it copies the
+  password and opens the Wi-Fi settings. On iOS the password is copied and pasted by hand. The password stays in the phone's secure storage and goes on
+  sign-out. Without an ITMO.ID sign-in on the phone the sheet offers `Войти через ITMO.ID` (the BARS sign-in, titled
+  for ITMO.ID) and reads ISU again after it.
 - 7 days before a client's ITMO sign-in ends, the bell and a notification remind you to renew it.
 - `Выглядеть как обычный браузер` (on by default) decides how new sign-ins look on id.itmo.ru: as a browser, or as
   `ITMO Widgets ... bot`. It applies to the app's own sign-in too.
@@ -170,15 +180,33 @@ on Android and native SwiftUI screens in a new iOS app. Android keeps the featur
   chips, dark in the dark theme. `Маршрут` in the lesson sheet and on the Сегодня hero opens it.
 - Plans come from the mirror on map.alllexey.dev and stay on the device (ADR 0033); `Лицензии` names their source.
 - Opened from Профиль, the map starts at Кронверкский пр., 49.
+- A room opened from a place chip's list keeps the chip: closing the room, or Back on Android, shows the list again.
+  Back on Android closes the map's layers one at a time (picking a route end, the route, the search, the room, the
+  place chip) before it leaves the map.
+
+### ISU messages
+
+- A prototype `Сообщения ИСУ` in Профиль on both platforms: the own ISU inbox and archive, read on the device through
+  the shared ISU client (ADR 0037). Unread counter, ten messages a page, a message's text without HTML,
+  links in the browser, attachments in the system viewer. Opening a message leaves it unread in ISU; nothing goes to
+  Backend. The demo shows fictional messages. Without an ITMO.ID sign-in on the phone the screen offers
+  `Войти через ITMO.ID` and loads again after it.
 
 ### Widgets
 
 - Rebuilt on one shared snapshot (RemoteViews on Android, WidgetKit on iOS): `Пара` with the lesson to go to and a
   live countdown, `Расписание на день` to scale with the `сейчас` line, `Список пар` (the classic list), and the new
   `Спорт` with the score ring and the nearest booking. `Пара`, `Расписание на день` and `Спорт` are beta.
+- New `Карточки` widget (beta; Android 4 x 2 to 4 x 4, iPhone medium and large; in the gallery on both): the
+  day's lessons as cards with the type chip, room and teacher; the current lesson with a wavy progress and the
+  minutes left; what does not fit folds into `ещё N пары`. Arrows page through the week and return to today
+  5 minutes after the last tap and at midnight.
 - A lesson opens its sheet, a booking or queue its sport lesson.
 - `Виджеты` is a gallery of whole live previews with `Добавить` (Android) or `Как добавить` (iOS) and each format's
   settings in a sheet; `Завтрашние пары вечером` is on by default.
+- Android: `Добавить` shows your own widget in the launcher's dialog (the cached schedule, sport's last snapshot, the
+  pass under its spoiler; the sample until there is data), and on Android 15+ the widget picker shows the widgets
+  with the current settings and theme instead of fixed images.
 - `Виджеты в цвет темы` (on by default) paints the widgets in the app's colours; with dynamic colours off the QR
   stays black on white.
 - List widgets placed in 2.2 stay lists. Schedule widgets work again on Android 8-11 and follow the launcher's corner
@@ -193,6 +221,9 @@ on Android and native SwiftUI screens in a new iOS app. Android keeps the featur
   `_`); earlier sign-ins of the same phone no longer show as other devices; this phone is named as in its settings;
   the screen reloads a moment after a change; the pull indicator is no longer cut by the header.
 - A list row with a long value (`Вход виден как`) wraps the value instead of squeezing the title, on both platforms.
+- Android menus with two-line items (the `Зачётка` semester picker) give each item room: Material's 12 dp above and
+  below, so the second line no longer touches the next item. Every Android menu is one `ItmoMenu` now: the semester
+  picker, the map's building menu and the privacy audience menu mark the current choice with a check.
 - Recordbook exams and coursework sharing a My ITMO entry ID keep their own labels, scores, attention state and
   subject pages on Android and iOS.
 - When ITMO.ID rejects the refresh token the session ends with a message; a timeout or a server error keeps it.
@@ -202,12 +233,15 @@ on Android and native SwiftUI screens in a new iOS app. Android keeps the featur
 - The prediction of a lesson you are booked on offers auto-sign again instead of showing as booked.
 - A setting changed while a screen starts watching it is no longer lost until restart.
 - Android sheets follow the finger and never go under the status bar or a cutout.
+- Android `Виджеты`: `Добавить` takes the kit's tonal colours instead of Material's grey, which read as disabled.
 - iOS shows pull-to-refresh on every tab root until the refresh ends.
 - iOS widgets of an `.ipa` re-signed by SideStore (or another tool that renames the App Group without
   `ALTAppGroups`) show data instead of the signed-out state: the app and the widgets find the group in their
   provisioning profile.
 - iOS widgets placed before sign-in leave the signed-out state as soon as the app signs in, not at their next
   hourly timeline.
+- The `Виджеты` previews follow the phone's light or dark mode as placed widgets do, also when `Тема` forces the
+  other one (Android and iOS).
 - Android text without its own colour is never black in the dark theme: the theme gives every screen `onSurface`,
   not only the ones inside a `Surface`.
 
@@ -224,11 +258,15 @@ on Android and native SwiftUI screens in a new iOS app. Android keeps the featur
 - Every Backend request carries `Accept-Language` with the app's UI language; Core 2 has the connections area
   (Backend's `connections.md`) instead of the alpha pairing and web login; MyItmoApi 2.3.0 lists and ends ITMO.ID
   sessions.
+- `IsuWebClient` (`core/network`) reads the user's own ISU pages on the device through ISU's ITMO.ID redirects with
+  the WebView's SSO cookies (ADR 0037); the Wi-Fi sheet is its first user.
 - Files and settings stay compatible with 2.2; `UpgradeFrom22Test` and `StableIdentifiersTest` guard the upgrade.
 - Builds name their origin (`official` or `custom`, with source and commit); `dist.yml` builds a self-signed APK and
   an unsigned `.ipa` with no secrets, also in a fork.
 - `scripts/verify.sh` is the one build entry point; a PR runs the fast checks for what it touches, the rest runs on
   `master`, nightly or with the `full-ci` label ([testing](docs/testing.md#ci)). Release builds ship baseline profiles.
+- The schedule widgets' snapshot (Android's file and iOS timeline 2) carries the six days after today (`week`, an
+  additive field) for day paging; widget refreshes fetch today through the sixth day after it.
 - Gradle 9.7, AGP 9.3, Kotlin 2.4.20, compileSdk 37, minSdk 26, targetSdk 36.
 
 ## 2.2 — 2026-10-03

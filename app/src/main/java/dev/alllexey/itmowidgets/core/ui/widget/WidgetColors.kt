@@ -2,16 +2,33 @@ package dev.alllexey.itmowidgets.core.ui.widget
 
 import android.content.Context
 import android.content.res.Configuration
+import android.content.res.Resources
 import android.graphics.Color
 import android.os.Build
 import android.view.View
 import android.widget.RemoteViews
 import androidx.annotation.ColorInt
 import androidx.annotation.ColorRes
+import androidx.appcompat.view.ContextThemeWrapper
 import androidx.core.content.ContextCompat
 import dev.alllexey.itmowidgets.R
 import dev.alllexey.itmowidgets.core.settings.WidgetColorRoles
 import dev.alllexey.itmowidgets.core.settings.WidgetPalette
+
+/**
+ * [this] in the system's light or dark mode, the one the launcher draws a placed widget in: an activity carries the
+ * app's `Тема` (AppCompat's night mode), so a widget drawn in it for a preview would show the other mode. Resources
+ * and the app theme's attributes resolve in the system's mode; locale, font scale and density stay [this]'s.
+ */
+fun Context.inSystemNightMode(): Context {
+    val system = Resources.getSystem().configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+    if (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == system) return this
+    return ContextThemeWrapper(this, R.style.AppTheme).apply {
+        // A delta: only the night bits are set, every other field stays undefined and keeps this context's value.
+        applyOverrideConfiguration(Configuration().apply { uiMode = system })
+    }
+}
+
 /** The roles of the mode [context] renders in. */
 fun WidgetPalette.rolesFor(context: Context): WidgetColorRoles = roles(
     dark = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
@@ -40,6 +57,12 @@ class WidgetColors(private val context: Context, private val palette: WidgetPale
             light == null || dark == null -> views.setColor(viewId, method, res)
             else -> views.setColorInt(viewId, method, opaque(light), opaque(dark))
         }
+    }
+
+    /** Calls [method] of [viewId] with [light] or [dark] as the launcher's mode is (below API 31: the render's). */
+    fun applyPair(views: RemoteViews, viewId: Int, method: String, @ColorInt light: Int, @ColorInt dark: Int) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) views.setColorInt(viewId, method, light, dark)
+        else views.setInt(viewId, method, if (isDark()) dark else light)
     }
 
     /** [apply] `setColorFilter` of an image, the tint of a shape drawn as a view's image. */
@@ -78,4 +101,7 @@ class WidgetColors(private val context: Context, private val palette: WidgetPale
     }
 
     private fun opaque(rgb: Int): Int = Color.BLACK or rgb
+
+    private fun isDark() =
+        context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
 }

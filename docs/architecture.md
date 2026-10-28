@@ -39,6 +39,7 @@ strings from `:shared:compose-strings` only, so its iOS klib has no Compose
 | `:shared:testing` | Test kit: fake clocks, files and HTTP for every target; Robolectric, Compose UI test, semantics checks and the screenshot harness on Android |
 | `:shared:feature-account` | Sign-in, first-run flow, profile tab, web sign-in, My ITMO web page, update offer |
 | `:shared:feature-map` | Campus map: plan data, room mapping, the indoor router and trip planner |
+| `:shared:feature-messages` | ISU messages over core's `IsuWebClient`: the inbox and archive, the HTML-to-text body, attachments |
 | `:shared:feature-home` | Сегодня and the bell over every feature's `DayLessonsGateway`, `TodayTodoSource`s and `BellSource`s |
 | `:shared:feature-qr` | QR pass, its cache and widget state |
 | `:shared:feature-recordbook` | Record book, BARS overlay, subject page, marks tracking, sheet scores |
@@ -194,7 +195,7 @@ never enforces privacy on its behalf.
 | Data | Where |
 |---|---|
 | Settings and flags | One DataStore file, `app_preferences`, read through per-concern stores in `core/storage` (`AppearancePreferences`, `WidgetSettingsPreferences`, ...) built on `DataStorePreferences` |
-| Tokens and the BARS session | `SecureStore`: `FileSecureStore` on Android (files in `noBackupFilesDir` sealed with an Android Keystore key), `KeychainSecureStore` on iOS |
+| Tokens, the BARS session and the Wi-Fi password | `SecureStore`: `FileSecureStore` on Android (files in `noBackupFilesDir` sealed with an Android Keystore key), `KeychainSecureStore` on iOS |
 | Caches and feature state (schedule cache, QR cache, found changes, marks, queue results, sheet scores, calendar sync, links) | JSON files under `AppDirectories` written with `AtomicTextFile`; device-only state is excluded from backup |
 | Widget snapshots | Android: `widgets/schedule_snapshot.json` and the QR state; iOS: JSON files in the App Group container that the widget extension reads |
 
@@ -211,7 +212,7 @@ Widget data is shared, rendering is native.
 
 - **Android widgets** are RemoteViews providers in `app/`: the QR widget
   (`QrCodeWidgetProvider`) and the schedule widgets (`SingleLessonWidgetProvider`,
-  `DayTimelineWidgetProvider`, and `DayScheduleWidgetProvider` for the classic list). A worker loads data through the shared
+  `DayTimelineWidgetProvider`, `CardsWidgetProvider`, and `DayScheduleWidgetProvider` for the classic list). A worker loads data through the shared
   provider (`ScheduleWidgetDataProvider`), writes a snapshot and renders it.
   Rules: [widgets](features/widgets.md).
 - **iOS widgets** are a WidgetKit extension in `iosApp/Extensions/Widgets/`
@@ -293,4 +294,5 @@ Backend, MyItmoApi and the web version live in their own repositories
 ([docs/README.md](README.md#related-repositories)). Backend changes first and
 `:shared:backend-client` mirrors its contract (`scripts/sync-backend-contract.sh`,
 [CONTRACT.md](../shared/backend-client/CONTRACT.md)); MyItmoApi is the only client
-of MyITMO and BARS, so extend it instead of adding a second one.
+of MyITMO and BARS, so extend it instead of adding a second one. ISU pages are read on the device by `IsuWebClient`
+(`core/network`, [ADR 0037](decisions/0037-on-device-isu-client.md)) with the phone's ITMO.ID cookies.

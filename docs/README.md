@@ -38,6 +38,7 @@ limits. Start there; the documents below are the developer reference.
 - [Schedule changes](features/schedule-changes.md) - the on-device check and its notification.
 - [Calendar](features/calendar.md) - calendar sync and `.ics` export.
 - [Campus map](features/map.md) - floor plans, room mapping, the router.
+- [ISU messages](features/isu-messages.md) - the own ISU inbox, read on the device.
 - [Sport](features/sport.md) - catalog, bookings, queues.
 - [Recordbook](features/recordbook.md) - the MyITMO record book and the BARS overlay.
 - [Subject page](features/subject-page.md) - one subject's result, links, teachers, lessons.
@@ -50,6 +51,7 @@ limits. Start there; the documents below are the developer reference.
 - [Notifications](features/notifications.md) - push, token sync, local notifications, channels.
 - [Widgets](features/widgets.md) - schedule, sport and QR widgets.
 - [QR pass](features/qr.md) - the pass, its cache, the tile.
+- [Wi-Fi](features/wifi.md) - ITMO-Corp, the password from ISU, the quick connect.
 - [My ITMO in the app](features/my-itmo-web.md) - the web view and its navigation policy.
 - [Update offer](features/update.md) - the version check per distribution variant.
 - [Connected clients](features/connections.md) - «Устройства», pairing agents, MCP servers and the web, ITMO.ID sessions.

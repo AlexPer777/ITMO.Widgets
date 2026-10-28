@@ -8,6 +8,7 @@ enum AppSymbol: String, CaseIterable {
     case arrowForward = "arrow_forward"
     case arrowUpward = "arrow_upward"
     case assignment = "assignment"
+    case attachFile = "attach_file"
     case autoAwesome = "auto_awesome"
     case badge = "badge"
     case book2 = "book_2"
@@ -70,6 +71,7 @@ enum AppSymbol: String, CaseIterable {
     case lock = "lock"
     case login = "login"
     case logout = "logout"
+    case mail = "mail"
     case map = "map"
     case menuBook = "menu_book"
     case moreVert = "more_vert"
@@ -116,6 +118,7 @@ enum AppSymbol: String, CaseIterable {
     case volumeUp = "volume_up"
     case weekend = "weekend"
     case widgets = "widgets"
+    case wifi = "wifi"
     case work = "work"
 
     /// The SF Symbol name, or the asset name of a custom symbol image when `isCustom`.
@@ -127,6 +130,7 @@ enum AppSymbol: String, CaseIterable {
         case .arrowForward: "arrow.right"
         case .arrowUpward: "arrow.up"
         case .assignment: "doc.text"
+        case .attachFile: "paperclip"
         case .autoAwesome: "sparkles"
         case .badge: "person.text.rectangle"
         case .book2: "book.closed"
@@ -189,6 +193,7 @@ enum AppSymbol: String, CaseIterable {
         case .lock: "lock"
         case .login: "arrow.right.to.line"
         case .logout: "rectangle.portrait.and.arrow.right"
+        case .mail: "envelope"
         case .map: "map"
         case .menuBook: "book"
         case .moreVert: "ellipsis"
@@ -235,6 +240,7 @@ enum AppSymbol: String, CaseIterable {
         case .volumeUp: "speaker.wave.2"
         case .weekend: "sofa"
         case .widgets: "square.grid.2x2"
+        case .wifi: "wifi"
         case .work: "briefcase"
         }
     }

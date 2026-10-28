@@ -5,6 +5,8 @@ import dev.alllexey.itmowidgets.feature.auth.di.authModule
 import dev.alllexey.itmowidgets.feature.home.di.homeModule
 import dev.alllexey.itmowidgets.feature.map.di.campusMapModule
 import dev.alllexey.itmowidgets.feature.me.di.meModule
+import dev.alllexey.itmowidgets.feature.messages.di.messagesModule
+import dev.alllexey.itmowidgets.feature.wifi.di.wifiModule
 import dev.alllexey.itmowidgets.feature.onboarding.di.onboardingDataModule
 import dev.alllexey.itmowidgets.feature.onboarding.di.onboardingModule
 import dev.alllexey.itmowidgets.feature.qr.di.qrModule
@@ -46,6 +48,7 @@ object KoinModules {
         androidSettingsModule,
         androidSportModule,
         androidUpdateModule,
+        androidMessagesModule,
         updateActionModule,
         debugModule,
         componentBindingsModule,
@@ -54,6 +57,7 @@ object KoinModules {
         homeModule,
         resourcesModule,
         campusMapModule,
+        messagesModule,
         settingsDataModule,
         settingsModule,
         recordbookModule,
@@ -66,6 +70,7 @@ object KoinModules {
         onboardingDataModule,
         onboardingModule,
         meModule,
+        wifiModule,
         reviewsModule,
         connectionsDataModule,
         connectionsModule,
