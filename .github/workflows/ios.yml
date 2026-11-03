@@ -124,13 +124,13 @@ jobs:
 
       # The JDK gradle/gradle-daemon-jvm.properties asks for (JetBrains 21), installed up front so the daemon
       # never auto-provisions it from api.foojay.io inside xcodebuild.
-      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: jetbrains
           java-version: 21
 
       # Basic (MIT) cache provider; only `master` writes the cache, everything else reads it.
-      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
         with:
           cache-provider: basic
           cache-read-only: ${{ github.ref != 'refs/heads/master' }}
@@ -212,7 +212,7 @@ jobs:
 
       - name: Upload the result bundle and snapshot diffs
         if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ios-check-results
           path: |
