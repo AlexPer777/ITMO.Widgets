@@ -14,6 +14,8 @@ on Android and native SwiftUI screens in a new iOS app. Android keeps the featur
 - `2.3.0-beta.1` (20291, 2026-10-10) and `2.3.0-beta.2` (20292, 2026-10-11): an APK in the Telegram channel.
 - `2.3.0-beta.3` (20293, 2026-10-23): APKs per ABI (`arm64-v8a`, `armeabi-v7a`, `-Pitmo.abiSplit=true`) instead of
   one universal APK, and an unsigned `.ipa` with the marketing version `2.3.0-beta.3`, in the Telegram channel.
+- `2.3.0-beta.4` (20294, 2026-11-06): per-ABI APKs and an unsigned `.ipa` as a GitHub release, and the first
+  `play` bundle for the Google Play closed test.
 
 ### iOS app
 
@@ -192,6 +194,8 @@ on Android and native SwiftUI screens in a new iOS app. Android keeps the featur
   any two rooms across floors, `По городу` in the system Maps between buildings, search across buildings, place
   chips, dark in the dark theme. `Маршрут` in the lesson sheet and on the Сегодня hero opens it.
 - Plans come from the mirror on map.alllexey.dev and stay on the device (ADR 0033); `Лицензии` names their source.
+- The Android app no longer declares MapLibre's location and Wi-Fi state permissions: the map never shows where you
+  are, and `scripts/check-play-policy.sh` now rejects location permissions.
 - Opened from Профиль, the map starts at Кронверкский пр., 49.
 - A room opened from a place chip's list keeps the chip: closing the room, or Back on Android, shows the list again.
   Back on Android closes the map's layers one at a time (picking a route end, the route, the search, the room, the
@@ -254,15 +258,23 @@ on Android and native SwiftUI screens in a new iOS app. Android keeps the featur
   targets stay 48 dp.
 - Android `Виджеты`: `Добавить` takes the kit's tonal colours instead of Material's grey, which read as disabled.
 - iOS shows pull-to-refresh on every tab root until the refresh ends.
+- iOS `Подключить устройство` for an agent or an MCP server: the ITMO.ID page after Face ID no longer stays frozen
+  (no taps, no typing). The page now opens once the app is active again; it used to come up while the Face ID UI
+  still held the app inactive, and WebKit never woke it.
 - iOS widgets of an `.ipa` re-signed by SideStore (or another tool that renames the App Group without
   `ALTAppGroups`) show data instead of the signed-out state: the app and the widgets find the group in their
   provisioning profile.
+- iOS widgets draw one background edge to edge: the content no longer paints its own darker rectangle inside the
+  system's tile (Home Screen, StandBy, tinted and clear styles, with `Виджеты в цвет темы` on or off).
+- iOS `Виджеты` no longer counts widgets removed from the Home Screen: the gallery reads WidgetKit's list again every
+  few seconds while it shows, and a list WidgetKit cannot give counts as none instead of keeping the last count.
 - iOS widgets placed before sign-in leave the signed-out state as soon as the app signs in, not at their next
   hourly timeline.
 - The `Виджеты` previews follow the phone's light or dark mode as placed widgets do, also when `Тема` forces the
   other one (Android and iOS).
 - Android text without its own colour is never black in the dark theme: the theme gives every screen `onSurface`,
   not only the ones inside a `Surface`.
+- Android `Новый отзыв` of a sport coach shows `Физическая культура` in `Предмет`, not only on the picked chip.
 
 ### For developers
 
