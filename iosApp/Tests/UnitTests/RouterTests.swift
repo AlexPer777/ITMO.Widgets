@@ -249,7 +249,8 @@ final class RouterTests: XCTestCase {
             barsIdentifier: nil, disciplineId: nil, controlType: nil
         ), materials: false)
         let scores = AppRoutes.SheetScores(args: SheetScoresArgs(
-            subjectId: 5, subjectName: "Subject", periodKey: "2026/2027:1", url: "https://example.com/s", step: .total
+            subjectId: 5, subjectName: "Subject", periodKey: "2026/2027:1", url: "https://example.com/s", step: .total,
+            linkId: nil
         ))
 
         XCTAssertEqual(router.open(invalid), .notOnIOS, "a subject without valid arguments opens nothing")
@@ -594,7 +595,8 @@ final class RouterTests: XCTestCase {
             teacherIsu: nil
         )
         let scores = SheetScoresArgs(
-            subjectId: 5, subjectName: "Subject", periodKey: "2026/2027:1", url: "https://example.com/s", step: .total
+            subjectId: 5, subjectName: "Subject", periodKey: "2026/2027:1", url: "https://example.com/s", step: .total,
+            linkId: nil
         )
         return [
             (AppRoutes.Auth.shared, .gate),
@@ -628,6 +630,7 @@ final class RouterTests: XCTestCase {
             (AppRoutes.LessonDetails(args: lesson), .swiftUISheet),
             (AppRoutes.PendingSportDetails(args: pendingSport), .swiftUISheet),
             (AppRoutes.CampusMap(args: CampusMapArgs(lesson: lesson, route: true)), .fullScreen),
+            (AppRoutes.Isu.shared, .swiftUI),
             (AppRoutes.IsuMessages.shared, .swiftUI),
             (AppRoutes.ReportReview(args: teacher, reviewId: "review-1"), .swiftUISheet),
             // The link report is a form sheet over the actions sheet that asks for it.

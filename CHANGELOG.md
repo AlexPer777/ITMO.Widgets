@@ -105,6 +105,11 @@ on Android and native SwiftUI screens in a new iOS app. Android keeps the featur
 - The subject page has tabs `Баллы`, `Пары` and `Материалы` that also turn by a swipe. The LMS link is gone.
 - Connected sheets find the right total far more often (1805 of 1816 students on 13 real sheets); a doubtful total
   shows `Проверьте итог`, and `Вернуть авто` undoes a hand-picked one.
+- The total's review picks from a list of columns by tab (header, own value, `есть у 23 из 30 · макс. 10`, empty
+  columns folded) and saves with `Сохранить`; `Сложить столбцы` adds several columns into the total, computed on the
+  phone. A sheet a link shares with a flow or everybody offers `Разобрать с ИИ`: Backend returns a rule, the phone
+  computes the accumulated points by it and shows the teacher's total as a second line; nothing is saved before
+  `Использовать`. A non-number input gives a dash, never 0. The sheet store moves to format 2 (2.2 cannot read it).
 - Links and teacher reviews vote with like and dislike thumbs; deleting an own link asks first; a flow link shows
   `после проверки` while Backend premoderates it.
 
@@ -124,8 +129,10 @@ on Android and native SwiftUI screens in a new iOS app. Android keeps the featur
 
 ### Профиль, friends and people
 
-- Профиль keeps the identity card, friends (or their gate), `Виджеты`, `Настройки`, the links (`Карта`, My ITMO) and
-  `Выйти`.
+- Профиль keeps the identity card, friends (or their gate), `Виджеты`, `Настройки`, the links (`Карта`, `ИСУ`,
+  My ITMO, Telegram, GitHub, `Обратная связь`) and `Выйти`.
+- `ИСУ` in Профиль (under `Карта`) opens a screen with `Сообщения` and `Wi-Fi`, which replace their two rows.
+- `Обратная связь` opens fb.widgets.alllexey.dev with the platform, the app version and the device model filled in.
 - `Выйти` ends the app's ITMO.ID session too, so old "Android, Chrome Mobile WebView" sessions no longer pile up on
   `id.itmo.ru/activity`. Without an answer from ITMO.ID within 5 seconds the sign-out goes on and the session expires
   there on its own (MyItmoApi 2.3.0).
@@ -149,7 +156,7 @@ on Android and native SwiftUI screens in a new iOS app. Android keeps the featur
   a separate empty browser store, the password stays on the phone, and the session is sealed end to end to the
   device. A client's screen shows its ITMO sign-in, its access as switches (more access asks for the screen lock),
   `Обновить вход` and `Отключить`, which also ends its ITMO session.
-- `Wi-Fi` (a Профиль row under `Карта`) shows the `ITMO-Corp` login and password from ISU, read on the phone with
+- `Wi-Fi` (Профиль -> `ИСУ`) shows the `ITMO-Corp` login and password from ISU, read on the phone with
   the ITMO.ID sign-in it already has; the password is hidden until shown, both copy. On Android `Подключиться` saves the
   network with the system's dialog on 11+ (PEAP, the server checked by `wifi.it.itmo.ru`); elsewhere it copies the
   password and opens the Wi-Fi settings. On iOS the password is copied and pasted by hand. The password stays in the phone's secure storage and goes on
@@ -188,11 +195,15 @@ on Android and native SwiftUI screens in a new iOS app. Android keeps the featur
 
 ### ISU messages
 
-- A prototype `Сообщения ИСУ` in Профиль on both platforms: the own ISU inbox and archive, read on the device through
+- A prototype `Сообщения ИСУ` in Профиль -> `ИСУ` on both platforms: the own ISU inbox and archive, read on the device through
   the shared ISU client (ADR 0037). Unread counter, ten messages a page, a message's text without HTML,
   links in the browser, attachments in the system viewer. Opening a message leaves it unread in ISU; nothing goes to
   Backend. The demo shows fictional messages. Without an ITMO.ID sign-in on the phone the screen offers
   `Войти через ITMO.ID` and loads again after it.
+- The list goes by month with headings, the subject wraps to two lines, read messages are in regular weight so
+  unread ones stand out, and the next page loads at the end of the list instead of behind `Показать ещё`. The first
+  load shows the list skeleton on Android, the error and sign-in states have icons, and attachments show a download
+  mark.
 
 ### Widgets
 
@@ -235,6 +246,8 @@ on Android and native SwiftUI screens in a new iOS app. Android keeps the featur
 - The prediction of a lesson you are booked on offers auto-sign again instead of showing as booked.
 - A setting changed while a screen starts watching it is no longer lost until restart.
 - Android sheets follow the finger and never go under the status bar or a cutout.
+- Android vote thumbs of links and reviews are 18 dp instead of 24 dp, so they no longer fill the pill; the touch
+  targets stay 48 dp.
 - Android `Виджеты`: `Добавить` takes the kit's tonal colours instead of Material's grey, which read as disabled.
 - iOS shows pull-to-refresh on every tab root until the refresh ends.
 - iOS widgets of an `.ipa` re-signed by SideStore (or another tool that renames the App Group without
