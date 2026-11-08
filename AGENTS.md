@@ -23,7 +23,9 @@ scripts/ios/test.sh               # iOS app build and tests (Mac with Xcode)
 ```
 
 MyItmoApi comes from Maven Central; set `MYITMOAPI_DIR` to a my-itmo-api checkout to build against local changes.
-A PR runs the fast part of this for what it touches; emulator tests (`android-ui`), release checks (`android-ship`) and lint run nightly or on `master`, and on a PR labelled `full-ci` ([docs/testing.md](docs/testing.md#ci)).
+A PR runs the fast part of this for what it touches (`ci.yml`; iOS only builds, its tests run on `master`); lint runs
+on `master`, emulator tests, release checks and Kotlin/Native tests nightly (`nightly.yml`). A full run of a branch:
+`gh workflow run ci.yml --ref <branch>` ([docs/testing.md](docs/testing.md#ci)).
 
 ## Rules
 
@@ -38,3 +40,18 @@ A PR runs the fast part of this for what it touches; emulator tests (`android-ui
 - Never commit secrets: `local.properties`, `keystore.properties`, `*.jks`, `.env*`, `.refresh-token`, tokens,
   database dumps or user data. `app/google-services.json` is Firebase client config and stays tracked.
 - Never mutate production data for testing; debug builds talk to `https://dev.widgets.alllexey.dev`.
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues of `alllexey-dev/ITMO.Widgets`, through the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The default five: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See
+`docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `GLOSSARY.md` at the root, ADRs in `docs/adr/`. See `docs/agents/domain.md`.

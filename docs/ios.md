@@ -1,10 +1,10 @@
 # iOS app
 
 The iOS client lives in `iosApp/` and links one Kotlin umbrella framework, `Shared`, built from `shared/ios/`
-([ADR 0023](decisions/0023-ios-client.md)). It has three bundles: the app, a WidgetKit extension and a notification
+([ADR 0023](adr/0023-ios-client.md)). It has three bundles: the app, a WidgetKit extension and a notification
 service extension. The app is a SwiftUI shell with five tabs (recordbook, schedule, today, sport, profile); every screen
-is SwiftUI over a shared ViewModel and no route hosts Compose ([ADR 0031](decisions/0031-swiftui-ios-screens.md),
-[ADR 0035](decisions/0035-ios-without-compose.md)). A new screen: [Adding a SwiftUI screen](recipes/ios-host.md).
+is SwiftUI over a shared ViewModel and no route hosts Compose ([ADR 0031](adr/0031-swiftui-ios-screens.md),
+[ADR 0035](adr/0035-ios-without-compose.md)). A new screen: [Adding a SwiftUI screen](recipes/ios-host.md).
 
 ## Prerequisites
 
@@ -138,7 +138,7 @@ Swift reaches Kotlin through `Shared` and SKIE (`shared/ios/build.gradle.kts`): 
   checks that no pager holds one.
 - `UiText` resolves in Swift with `text.resolved` (`Sources/Support/UiText+Resolve.swift`), icons with
   `AppIcon.symbol` and `AppSymbol.image`. Kotlin cannot resolve it: Kotlin/Native turns the table's `NSString` into a
-  Kotlin `String` and drops the `.stringsdict` plural rules ([ADR 0035](decisions/0035-ios-without-compose.md)).
+  Kotlin `String` and drops the `.stringsdict` plural rules ([ADR 0035](adr/0035-ios-without-compose.md)).
 
 ## Settings and diagnostics
 
@@ -180,7 +180,7 @@ The profile's `Устройства` row (`AppRoutes.Devices`) pushes `DevicesSc
 
 ## Strings and icons
 
-The catalog is the Android resource files ([ADR 0028](decisions/0028-strings-and-icons.md)); Swift holds no Russian.
+The catalog is the Android resource files ([ADR 0028](adr/0028-strings-and-icons.md)); Swift holds no Russian.
 
 - `./gradlew :app:exportAppleStrings` writes `iosApp/Shared/Strings/*.xcstrings`, one table per catalog file;
   `strings_platform.xml` and `iosApp/Strings/strings_ios*.xml` go to `Localizable` (APNs resolves `loc-key` only
@@ -190,7 +190,7 @@ The catalog is the Android resource files ([ADR 0028](decisions/0028-strings-and
   preferred languages, so formatting on the current locale is Russian on any device.
 - Kotlin reads the same tables: the graph's `UiTextResolver` (notifications, the widget files, shares, the widget
   gallery's samples) calls `IosPlatform.resolveText`, which is `text.resolved`. No CMP resource is packed into the app
-  ([ADR 0035](decisions/0035-ios-without-compose.md)); Kotlin/Native tests use `KeyTextResolver`, which gives keys.
+  ([ADR 0035](adr/0035-ios-without-compose.md)); Kotlin/Native tests use `KeyTextResolver`, which gives keys.
 - Swift uses generated symbols: `Text(.StringsCommon.scheduleLessonCount(5))`; App Intents take a key literal.
 - Icons: `iosApp/Shared/Symbols/AppSymbol.swift` is generated from `docs/design/icons.tsv` and names an SF Symbol per
   row; `custom.*` names are symbol images in `Brands.xcassets`.
@@ -238,7 +238,7 @@ which iOS never draws; M3 Expressive stays Android's only.
 ## Identifiers and signing
 
 Frozen from the first TestFlight build; `iosApp/Tests/UnitTests/StableIdentifiersTests.swift` pins them
-([ADR 0016](decisions/0016-parity-rewrite.md)).
+([ADR 0016](adr/0016-parity-rewrite.md)).
 
 | Identifier | Value |
 |---|---|
@@ -395,9 +395,10 @@ Commands: [testing.md](testing.md#ios); `./gradlew verifyIosKlibs` compiles the 
   build by as much as it saved.
 - To open the project in Xcode run `xcodegen generate --spec iosApp/project.yml` first.
 - MyItmoApi comes from Maven Central; `MYITMOAPI_DIR` builds against a local checkout.
-- CI: `.github/workflows/ios.yml` runs `ios-check` (`scripts/ios/test.sh --ci`) on PRs that change iOS inputs and on
-  pushes to `master` that change `shared/` (see [testing.md](testing.md#ci)); `ios-nightly.yml` runs every module's
-  `kn` tests and all `UITests`.
+- CI (see [testing.md](testing.md#ci)): `ci.yml` builds the app without tests (`scripts/ios/test.sh --ci build`) on
+  PRs that change iOS inputs, and runs the unit and snapshot tests (`test.sh --ci`) on pushes to `master` that change
+  iOS inputs or `shared/` and on manual runs; `nightly.yml` runs every module's `kn` tests nightly and all `UITests`
+  on Sundays. The macOS jobs share `.github/actions/ios-setup`.
 - Release builds: `scripts/ios/archive.sh --unsigned` (an `.ipa` for self-signing) or `--signed [--upload]` with
   `Signing.local.xcconfig`. The build number is Android's `versionCode` from `app/build.gradle.kts`, and the build identity
   (`BuildChannel`, `BuildSource`, `BuildCommit`) is in [building](building.md#build-identity). Uploads are manual
@@ -407,9 +408,9 @@ Commands: [testing.md](testing.md#ios); `./gradlew verifyIosKlibs` compiles the 
 
 - SwiftUI screens and widget entry views have swift-snapshot-testing references in `__Snapshots__/` beside each test:
   `assertAppearances(of:named:)` renders light and dark at Dynamic Type L and AX1, 375 pt wide (iPhone SE, the
-  narrowest iPhone of iOS 26). `test.sh --ci` never records; when CI disagrees with a local recording, the CI images
-  win. The system spinner starts on a frame picked by the time it appears, so layer renders draw an indeterminate
-  `ProgressView` with a still stand-in (`StillSpinnerStyle` in `AssertAppearances.swift`).
+  narrowest iPhone of iOS 26). `test.sh --ci` never records; when CI (on `master`, a PR only builds) disagrees with a
+  local recording, the CI images win. The system spinner starts on a frame picked by the time it appears, so layer
+  renders draw an indeterminate `ProgressView` with a still stand-in (`StillSpinnerStyle` in `AssertAppearances.swift`).
 - Whole screens with system chrome (the glass tab bar, navigation bars, presented sheets) use
   `assertScreenAppearances(of:named:)`, which draws the view in a window of its own at 375 x 667 pt with UIKit
   animations off; a layer render misses that chrome (`ShellSnapshotTests`, `ScheduleSnapshotTests`).

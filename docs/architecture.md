@@ -18,8 +18,8 @@ ITMO.Widgets is a Kotlin Multiplatform app for Android and iOS.
 - `iosApp/` is the iOS app, built with XcodeGen: native SwiftUI screens over
   the shared view models through the `Shared` framework, plus Swift-only
   widgets and a notification service extension. iOS draws no Compose
-  ([ADR 0031](decisions/0031-swiftui-ios-screens.md),
-  [ADR 0035](decisions/0035-ios-without-compose.md)).
+  ([ADR 0031](adr/0031-swiftui-ios-screens.md),
+  [ADR 0035](adr/0035-ios-without-compose.md)).
 
 ## Modules
 
@@ -27,7 +27,7 @@ ITMO.Widgets is a Kotlin Multiplatform app for Android and iOS.
 [`build-logic/`](../build-logic/README.md), versions in `gradle/libs.versions.toml`.
 Every feature applies `itmowidgets.cmp.android`: Compose UI in `androidMain`,
 strings from `:shared:compose-strings` only, so its iOS klib has no Compose
-([ADR 0035](decisions/0035-ios-without-compose.md)).
+([ADR 0035](adr/0035-ios-without-compose.md)).
 
 | Module | Holds |
 |---|---|
@@ -51,7 +51,7 @@ strings from `:shared:compose-strings` only, so its iOS klib has no Compose
 | `:shared:feature-sport` | Sport catalog, bookings, queues, score |
 | `:shared:ios` | Umbrella that builds the static framework `Shared` for Xcode, iOS Koin start, the Swift bridge |
 | `:konsist` | Architecture rules over the sources of `app/` and `shared/` |
-| `:baselineprofile` | Device-only: generates `:app`'s baseline and startup profiles and runs the nightly frame-timing benchmarks over the demo session (docs/testing.md) |
+| `:baselineprofile` | Device-only: generates `:app`'s baseline and startup profiles over the demo session, by hand before a release (docs/testing.md) |
 
 Allowed edges: a feature module depends on `:shared:core` (all targets) and on
 `:shared:designsystem` and `:shared:compose-strings` from `androidMain` only
@@ -245,8 +245,8 @@ behind shared ports. Details: [notifications](features/notifications.md).
 
 User-visible text is Russian and lives in catalog files
 `shared/<module>/src/commonMain/composeResources/values/strings_<file>.xml`
-([ADR 0028](decisions/0028-strings-and-icons.md),
-[ADR 0035](decisions/0035-ios-without-compose.md)).
+([ADR 0028](adr/0028-strings-and-icons.md),
+[ADR 0035](adr/0035-ios-without-compose.md)).
 `strings_common.xml` (`:shared:core`) holds text two modules share;
 `strings_platform.xml` holds text system surfaces read (manifest, widgets,
 notifications, the tile), with frozen keys in `scripts/strings-frozen-keys.txt`.
@@ -295,4 +295,4 @@ Backend, MyItmoApi and the web version live in their own repositories
 `:shared:backend-client` mirrors its contract (`scripts/sync-backend-contract.sh`,
 [CONTRACT.md](../shared/backend-client/CONTRACT.md)); MyItmoApi is the only client
 of MyITMO and BARS, so extend it instead of adding a second one. ISU pages are read on the device by `IsuWebClient`
-(`core/network`, [ADR 0037](decisions/0037-on-device-isu-client.md)) with the phone's ITMO.ID cookies.
+(`core/network`, [ADR 0037](adr/0037-on-device-isu-client.md)) with the phone's ITMO.ID cookies.
