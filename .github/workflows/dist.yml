@@ -2,21 +2,14 @@
 # - apk: the githubRelease APK against production, signed with the runner's debug key (`-Pitmo.selfSigned=true`);
 #   on demand only, a release's APK is the owner's signed upload (docs/release.md).
 # - ipa: `scripts/ios/archive.sh --unsigned`, an .ipa to re-sign with AltStore, SideStore or an own Apple ID; on
-#   demand with iOS selected by default.
+#   demand, and attached to every published release (prereleases included).
 # Both are `custom` builds (BuildChannel) with this repository as BuildSource.
 name: dist
 
 on:
   workflow_dispatch:
-    inputs:
-      platform:
-        description: 'Build platform'
-        type: choice
-        default: ios
-        options:
-          - ios
-          - android
-          - both
+  release:
+    types: [published]
 
 concurrency:
   group: dist-${{ github.ref }}
@@ -25,14 +18,9 @@ concurrency:
 permissions:
   contents: read
 
-env:
-  # As in ios.yml: XcodeGen from its release, the version equal to ITMO_XCODEGEN_VERSION in scripts/ios/env.sh.
-  XCODEGEN_VERSION: 2.46.0
-  XCODEGEN_SHA256: 4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806
-
 jobs:
   apk:
-    if: inputs.platform == 'android' || inputs.platform == 'both'
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -55,101 +43,24 @@ jobs:
           retention-days: 30
 
   ipa:
-    if: inputs.platform == 'ios' || inputs.platform == 'both'
     runs-on: xcode-27
     timeout-minutes: 120
     permissions:
-      contents: read
+      contents: write # gh release upload
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          fetch-depth: 0
 
-      - name: Use upstream commit count as the IPA build number
-        shell: bash
-        run: |
-          git fetch --no-tags https://github.com/alllexey-dev/ITMO.Widgets.git +refs/heads/master:refs/remotes/upstream/master
-          upstream_base=$(git merge-base HEAD refs/remotes/upstream/master)
-          build=$(git rev-list --count "$upstream_base")
-          echo "ITMO_BUILD_NUMBER=$build" >> "$GITHUB_ENV"
-          echo "IPA build number: $build (upstream $upstream_base)"
-          echo "IPA build number: **$build** (upstream commit: $upstream_base)" >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Select the pinned Xcode
-        run: |
-          version=$(sed -n 's/^: "\${ITMO_XCODE_VERSION:=\(.*\)}"$/\1/p' scripts/ios/env.sh)
-          app="/Applications/Xcode_$version.app"
-          if [ -z "$version" ] || [ ! -d "$app" ]; then
-            echo "::error::Xcode ${version:-?} pinned in scripts/ios/env.sh is not on this runner image."
-            ls -d /Applications/Xcode*.app
-            exit 1
-          fi
-          echo "ITMO_DEVELOPER_DIR=$app/Contents/Developer" >> "$GITHUB_ENV"
-          echo "DEVELOPER_DIR=$app/Contents/Developer" >> "$GITHUB_ENV"
-
-      - name: Install XcodeGen
-        run: |
-          pinned=$(sed -n 's/^: "\${ITMO_XCODEGEN_VERSION:=\(.*\)}"$/\1/p' scripts/ios/env.sh)
-          if [ "$pinned" != "$XCODEGEN_VERSION" ]; then
-            echo "::error::scripts/ios/env.sh pins XcodeGen $pinned, dist.yml installs $XCODEGEN_VERSION; update both."
-            exit 1
-          fi
-          zip="$RUNNER_TEMP/xcodegen.zip"
-          curl --retry 3 -fsSL -o "$zip" "https://github.com/yonaskolb/XcodeGen/releases/download/$XCODEGEN_VERSION/xcodegen.zip"
-          echo "$XCODEGEN_SHA256  $zip" | shasum -a 256 -c -
-          unzip -q "$zip" -d "$RUNNER_TEMP/xcodegen"
-          bin=$(dirname "$(find "$RUNNER_TEMP/xcodegen" -type f -name xcodegen -perm -u+x | head -n 1)")
-          echo "$bin" >> "$GITHUB_PATH"
-
-      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+      # A newer Xcode build on the image only warns here: a published release still gets its .ipa.
+      - uses: ./.github/actions/ios-setup
         with:
-          distribution: jetbrains
-          java-version: 21
-
-      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
-        with:
-          cache-provider: basic
-          # Manual builds on master seed the cache for the next IPA build.
-          cache-read-only: false
-
-      # One worker on the 7 GB runner (as ios.yml); Gradle uses only the JDK above.
-      - name: Gradle settings
-        run: |
-          mkdir -p "$GRADLE_USER_HOME"
-          {
-            echo "org.gradle.workers.max=1"
-            echo "org.gradle.java.installations.auto-download=false"
-            echo "org.gradle.java.installations.paths=$JAVA_HOME"
-          } >> "$GRADLE_USER_HOME/gradle.properties"
-
-      - name: Kotlin/Native version
-        id: kotlin-native
-        run: echo "version=$(sed -n 's/^kotlin = "\(.*\)"$/\1/p' gradle/libs.versions.toml)" >> "$GITHUB_OUTPUT"
-
-      - name: Restore ~/.konan
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.konan
-          key: konan-${{ runner.os }}-${{ runner.arch }}-${{ steps.kotlin-native.outputs.version }}
+          strict-pins: "false"
 
       - name: scripts/ios/archive.sh --unsigned
         env:
           CI: "true"
-        shell: bash
-        run: |
-          mkdir -p iosApp/build
-          set -o pipefail
-          scripts/ios/archive.sh --unsigned 2>&1 | tee iosApp/build/ipa-build.log
-
-      - name: Upload IPA build log
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: ipa-build-log-${{ github.run_number }}
-          path: iosApp/build/ipa-build.log
-          if-no-files-found: ignore
-          retention-days: 30
+        run: scripts/ios/archive.sh --unsigned
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -158,3 +69,10 @@ jobs:
           if-no-files-found: error
           compression-level: 0
           retention-days: 30
+
+      - name: Attach the .ipa to the release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$TAG" iosApp/build/archive/ITMOWidgets-*-unsigned.ipa --repo "$GITHUB_REPOSITORY" --clobber
