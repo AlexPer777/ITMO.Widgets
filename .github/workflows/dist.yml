@@ -2,14 +2,21 @@
 # - apk: the githubRelease APK against production, signed with the runner's debug key (`-Pitmo.selfSigned=true`);
 #   on demand only, a release's APK is the owner's signed upload (docs/release.md).
 # - ipa: `scripts/ios/archive.sh --unsigned`, an .ipa to re-sign with AltStore, SideStore or an own Apple ID; on
-#   demand, and attached to every published release (prereleases included).
+#   demand with iOS selected by default.
 # Both are `custom` builds (BuildChannel) with this repository as BuildSource.
 name: dist
 
 on:
   workflow_dispatch:
-  release:
-    types: [published]
+    inputs:
+      platform:
+        description: Build platform
+        type: choice
+        default: ios
+        options:
+          - ios
+          - android
+          - both
 
 concurrency:
   group: dist-${{ github.ref }}
@@ -20,7 +27,7 @@ permissions:
 
 jobs:
   apk:
-    if: github.event_name == 'workflow_dispatch'
+    if: inputs.platform == 'android' || inputs.platform == 'both'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -43,24 +50,59 @@ jobs:
           retention-days: 30
 
   ipa:
+    if: inputs.platform == 'ios' || inputs.platform == 'both'
     runs-on: xcode-27
     timeout-minutes: 120
-    permissions:
-      contents: write # gh release upload
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
 
-      # A newer Xcode build on the image only warns here: a published release still gets its .ipa.
+      - name: Use upstream commit count as the IPA build number
+        shell: bash
+        run: |
+          git fetch --no-tags https://github.com/alllexey-dev/ITMO.Widgets.git +refs/heads/master:refs/remotes/upstream/master
+          upstream_base=$(git merge-base HEAD refs/remotes/upstream/master)
+          build=$(git rev-list --count "$upstream_base")
+          echo "ITMO_BUILD_NUMBER=$build" >> "$GITHUB_ENV"
+          echo "IPA build number: $build (upstream $upstream_base)"
+          echo "IPA build number: **$build** (upstream commit: $upstream_base)" >> "$GITHUB_STEP_SUMMARY"
+
+      # Reuse the author's toolchain; manual builds also populate caches.
       - uses: ./.github/actions/ios-setup
+        id: setup
         with:
           strict-pins: "false"
+          cache-write: "true"
+
+      - name: Enable the Gradle build cache
+        shell: bash
+        run: echo "org.gradle.caching=true" >> "$GRADLE_USER_HOME/gradle.properties"
 
       - name: scripts/ios/archive.sh --unsigned
         env:
           CI: "true"
-        run: scripts/ios/archive.sh --unsigned
+        shell: bash
+        run: |
+          set -o pipefail
+          scripts/ios/archive.sh --unsigned 2>&1 | tee "$RUNNER_TEMP/ipa-build.log"
+
+      - name: Upload IPA build log
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ipa-build-log-${{ github.run_number }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ipa-build.log
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Save Kotlin/Native cache
+        if: success() && steps.setup.outputs.konan-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.konan
+          key: ${{ steps.setup.outputs.konan-key }}
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -69,10 +111,3 @@ jobs:
           if-no-files-found: error
           compression-level: 0
           retention-days: 30
-
-      - name: Attach the .ipa to the release
-        if: github.event_name == 'release'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.event.release.tag_name }}
-        run: gh release upload "$TAG" iosApp/build/archive/ITMOWidgets-*-unsigned.ipa --repo "$GITHUB_REPOSITORY" --clobber
