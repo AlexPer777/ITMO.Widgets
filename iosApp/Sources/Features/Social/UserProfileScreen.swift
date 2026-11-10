@@ -9,6 +9,7 @@ import SwiftUI
 struct UserProfileScreen: View {
     let isu: Int32
     @Environment(AppRouter.self) private var router
+    @Environment(\.openURL) private var openURL
     @State private var model: ObservableViewModel<UserProfileViewModel, any UserProfileUiState>
     @State private var messages = SocialMessages()
     @State private var removing: String?
@@ -89,6 +90,7 @@ struct UserProfileScreen: View {
             sport: { open(AppRoutes.UserSport(isu: $0.isu, name: $0.displayName.resolved, givenName: $0.givenName)) },
             friends: { open(AppRoutes.UserFriends(isu: $0.isu, name: $0.displayName.resolved)) },
             toggleSummary: { viewModel.toggleSummaryScales() },
+            contact: { openURL.link($0) { messages.show(AppStrings.string("link_open_failed")) } },
             review: TeacherReviewActions(
                 vote: { viewModel.vote(reviewId: $0, up: $1) },
                 report: { page, id in open(AppRoutes.ReportReview(args: page.reviewArgs, reviewId: id)) },
@@ -139,6 +141,7 @@ struct UserProfileContentActions {
     var sport: (UserProfileUiStateContent) -> Void = { _ in }
     var friends: (UserProfileUiStateContent) -> Void = { _ in }
     var toggleSummary: () -> Void = {}
+    var contact: (String) -> Void = { _ in }
     var review = TeacherReviewActions()
 }
 
@@ -184,6 +187,10 @@ struct UserProfileContent: View {
             study(page)
             teaching(page)
         }
+        contacts(page)
+        if page.teaching != nil, let reviews = page.reviews {
+            ProfileReviewsSection(page: page, reviews: reviews, actions: actions)
+        }
         if page.canRemoveFriend {
             ItmoListGroup {
                 ItmoRow(
@@ -199,8 +206,8 @@ struct UserProfileContent: View {
         }
     }
 
-    /// Teaching: the lesson they give now, the subjects they teach the viewer, where to find them and their timetable,
-    /// then the reviews with their summary.
+    /// Teaching: the lesson they give now, the subjects they teach the viewer, where to find them and their timetable;
+    /// the reviews follow the contacts.
     @ViewBuilder
     private func teaching(_ page: UserProfileUiStateContent) -> some View {
         if let block = page.teaching {
@@ -234,8 +241,25 @@ struct UserProfileContent: View {
                     actions.teacherSchedule(page)
                 }
             }
-            if let reviews = page.reviews {
-                ProfileReviewsSection(page: page, reviews: reviews, actions: actions)
+        }
+    }
+
+    /// Contacts: a row per My ITMO contact; one with a destination opens it, the rest are plain text.
+    @ViewBuilder
+    private func contacts(_ page: UserProfileUiStateContent) -> some View {
+        if !page.contacts.isEmpty {
+            ItmoSectionHeader(title: AppStrings.string("person_section_contacts"))
+                .accessibilityIdentifier("user_profile_contacts")
+            ItmoListGroup {
+                ForEach(Array(page.contacts.enumerated()), id: \.offset) { _, contact in
+                    ItmoRow(
+                        title: contact.value,
+                        subtitle: contact.label,
+                        symbol: contact.icon.symbol,
+                        tone: contact.url == nil ? .neutral : .primary,
+                        action: contact.url.map { url in { actions.contact(url) } }
+                    )
+                }
             }
         }
     }
