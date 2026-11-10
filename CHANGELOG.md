@@ -33,6 +33,9 @@ on Android and native SwiftUI screens in a new iOS app. Android keeps the featur
   Screen ring move with the timeline's 5-minute ticks instead of a system timer; the countdown stays live.
 - Background refresh checks schedule changes and new marks (My ITMO, BARS, connected sheets) with Android's periods
   and texts; what is found at night arrives at 06:00, and a tap on a notification opens the screen it is about.
+- Push: the app registers with APNs and Firebase Messaging and sends the FCM token to Backend, so friend requests,
+  new devices and sport places arrive on iOS in signed builds; a privacy manifest and the export-compliance flag
+  for App Store Connect, and signed archives carry the marketing version without its pre-release suffix.
 - The notification service books a freed sport place as Android does, never for another account, the demo or
   without the services opt-in. `Спорт`, `Друзья` and `Новые устройства` switches stay hidden until the app holds
   Apple's notification filtering entitlement; until then every push shows.
@@ -339,6 +342,9 @@ on Android and native SwiftUI screens in a new iOS app. Android keeps the featur
 - Android text without its own colour is never black in the dark theme: the theme gives every screen `onSurface`,
   not only the ones inside a `Surface`.
 - Android `Новый отзыв` of a sport coach shows `Физическая культура` in `Предмет`, not only on the picked chip.
+- `Мои баллы` connects a sheet that lists a group twice in one tab (the scores, then an attendance block under
+  `PEOPLE IN CLASS`): the own ISU picks the topmost row instead of asking and then failing with `Строка не найдена`;
+  a name in several rows stays a choice, and the chosen row is found again (`rowOccurrence` in the sheet store).
 
 ### For developers
 
