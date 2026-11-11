@@ -16,6 +16,8 @@ on Android and native SwiftUI screens in a new iOS app. Android keeps the featur
   one universal APK, and an unsigned `.ipa` with the marketing version `2.3.0-beta.3`, in the Telegram channel.
 - `2.3.0-beta.4` (20294, 2026-11-06): per-ABI APKs and an unsigned `.ipa` as a GitHub release, and the first
   `play` bundle for the Google Play closed test.
+- `2.3.0-beta.5` (20295, 2026-11-11): per-ABI APKs and an unsigned `.ipa` as a GitHub release, and the `play`
+  bundle for the Google Play closed test.
 
 ### iOS app
 
@@ -301,6 +303,8 @@ on Android and native SwiftUI screens in a new iOS app. Android keeps the featur
 
 ### Fixes
 
+- The QR pass stays readable while it refreshes: the shown code is no longer dimmed or covered by a spinner, the
+  line under it says `Обновляется, код от 11:44`, and the new code replaces the old one in place, on Android and iOS.
 - `Устройства`: `Отключить` ends the client's ITMO.ID session every time (MyItmoApi 2.3.1 accepts session ids with
   `_`); earlier sign-ins of the same phone no longer show as other devices; this phone is named as in its settings;
   the screen reloads a moment after a change; the pull indicator is no longer cut by the header.
