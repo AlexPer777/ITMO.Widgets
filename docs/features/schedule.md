@@ -84,7 +84,7 @@ the pushed feed of `AppRoutes.UserSchedule` with `ScheduleFeedViewModel.ARG_TEAC
 (`ScheduleApi.getTeacherSchedule`) for each range the feed loads and keeps the answers in memory, one instance per
 feed: nothing on disk, nothing uploaded, no Backend opt-in needed. Room bookings (`flowTypeId` 5) are left out;
 lessons with the same time, subject and place for several groups are one `DayLesson` with every group in `groups`
-(the row's byline `Лекция, M3206, M3207`, the sheet's flow), the same grouping as
+(the row's `Лекция · M3206, M3207`, the sheet's flow), the same grouping as
 [what a teacher gives now](#what-a-teacher-gives-now). A student's or unknown ISU answers with days without lessons.
 Demo answers from the demo week.
 
@@ -94,7 +94,9 @@ Demo answers from the demo week.
 Сегодня's `DayLessonsGateway`), re-evaluated every minute.
 
 - Every day of the window that a refresh answered for is a row: a day with lessons is a sticky header over the
-  shared lesson timeline (`core/lesson/LessonTimelines`, the rules of Сегодня); a weekday without lessons is one
+  shared lesson timeline (`core/lesson/LessonTimelines`, the rules of Сегодня), whose rail ends in a mark with the
+  time the day's lessons end (`Конец пар`, then `Пары закончились` on today) and whose current lesson says
+  `ещё 41 мин`; a weekday without lessons is one
   short row; a free Saturday and Sunday are one `Выходные` row; a week starts with MyITMO's week number (its parity
   is never shown). Days no refresh answered for yet are left out, so a missing day never reads as free.
 - The week strip pages by weeks with a swipe: settling on a week shows its Monday (today on the current week), a tap
@@ -147,6 +149,8 @@ queue; plain `очередь` while the place is unknown or the lesson is only p
 
 - `PendingSportBookingsRepository` (`core/sport`) excludes cancelled, terminal, started and already-signed entries;
   queues on the same lesson collapse into one row; unpublished predictions use prototype dates plus two weeks.
+  Its observers share one projection kept current in the application scope from the first observer on, so a screen
+  that subscribes again starts from the known queues, not from an empty list.
 - Observed only when the preference is on and only for the own schedule; never for friends or the official cache.
   The Backend opt-in stays an independent gate in the data layer.
 - A queue is never `идёт` or `далее` and does not count as a lesson (the day's count, the strip's and the month's

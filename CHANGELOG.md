@@ -101,6 +101,11 @@ on Android and native SwiftUI screens in a new iOS app. Android keeps the featur
   with the groups in place of the teacher; lessons given to several groups at once are one lesson.
 - A differentiated credit (My ITMO type 9) reads `Диф. зачёт` in the schedule, the lesson sheet and the widgets
   instead of a plain `Пара`.
+- A day's timeline ends in a mark with the time the lessons end instead of a rail cut off under the last lesson;
+  today it says `Конец пар`, then `Пары закончились` (also on Сегодня).
+- The current lesson of a timeline sits on a light tint and says `ещё 41 мин` beside a bar instead of `идёт`.
+- Every lesson row and card names the type in its colour (`Лекция · Белов П. И.`) and shows the room in the text
+  colour beside a pin.
 
 ### Зачётка and subjects
 
@@ -155,9 +160,11 @@ on Android and native SwiftUI screens in a new iOS app. Android keeps the featur
 - One person card for any ISU: roles, the ISU with copy, `Написать отзыв`, `Добавить в друзья` or `Пригласить в
   ITMO.Widgets`, then `Преподавание` (the lesson they give now, the subjects they teach you, the AI summary and
   reviews) and `Учёба` (groups, schedule, sport and friends you may open). Someone's hidden data is simply absent.
-- The person card lists the contacts My ITMO returns under `Контакты`, above a teacher's reviews: e-mail, phone and
-  social links open in the app that takes them with an icon of their kind (mail, phone, the Telegram or VK mark),
-  other values stay plain text. Contacts stay on the phone and never reach Backend.
+- The person card lists the contacts My ITMO returns under `Контакты`, above a teacher's reviews, each named by its
+  kind (`Почта`, `Телефон`, `Сайт`, `ВКонтакте`, `Telegram`, `LinkedIn` and others): e-mail, phone, sites and VK,
+  Telegram, X, LinkedIn and Facebook profiles open in the app that takes them with an icon of their kind (mail,
+  phone, the Telegram or VK mark, a link), handles read `@handle`; Skype and other values stay plain text. Contacts
+  stay on the phone and never reach Backend.
 - Another user's sport is titled `Спорт` with their given name after it and shows lesson cards.
 - Reviews of sport coaches: the editor asks Backend for subject suggestions when it opens
   (`GET /api/teachers/{isu}/reviews/hints`), merged with the subjects of your own lessons; a new review of a coach
@@ -305,6 +312,18 @@ on Android and native SwiftUI screens in a new iOS app. Android keeps the featur
 
 ### Fixes
 
+- A lesson from an own sport queue no longer leaves its day for a moment when Сегодня or the schedule comes back
+  after another screen; in the evening that also threw away the scroll of Сегодня. Every new observer of the queues
+  started from an empty list; now they share one projection that stays current.
+- The Google Play build offers an update only when Google Play has it for this phone: Backend's latest version moves
+  with a GitHub release, and during a review, a staged rollout or a GitHub-only beta the offer led to a Play card
+  without `Обновить`, every day. A build below the minimum version waits for Play the same way instead of showing a
+  forced screen that cannot update. The offer there reads `Обновить` and `Обновление уже доступно в Google Play`,
+  without Backend's note, and `Не удалось открыть Google Play` when nothing opens. The GitHub build and iOS are
+  unchanged.
+- People search finds names with `ё` typed with `е` and the other way round: `семен головин` finds `Семён Головин`,
+  `федоров` lists the Фёдоровы after the Федоровы. Each page asks My ITMO for every spelling at once (at most 6
+  more) and shows each person once.
 - `Запись` predicts a repeat two weeks later only for a timetable lesson (My ITMO lesson type 2). The extra lessons
   of a term's first weeks no longer show a predicted lesson that never comes, with an auto-sign queue that could
   only wait.
@@ -336,9 +355,9 @@ on Android and native SwiftUI screens in a new iOS app. Android keeps the featur
   typing, the app killed when left). The page focuses its field and brings up the keyboard; the pairing sheet under
   it counted the keyboard into its content height and re-laid out without end. Sheets now size to their content
   without the keyboard (#613). The page also opens only once the app is active again after Face ID.
-- iOS widgets of an `.ipa` re-signed by SideStore (or another tool that renames the App Group without
-  `ALTAppGroups`) show data instead of the signed-out state: the app and the widgets find the group in their
-  provisioning profile.
+- iOS sideloading: the `Бета для iPhone` notice, README and docs recommend AltStore only. The widgets of an `.ipa`
+  re-signed by SideStore stay in the signed-out state (2.3.0-beta.5), although the app and the widgets also look the
+  App Group up in their provisioning profile; not investigated further, iOS moves to the App Store.
 - iOS widgets draw one background edge to edge: the content no longer paints its own darker rectangle inside the
   system's tile (Home Screen, StandBy, tinted and clear styles, with `Виджеты в цвет темы` on or off).
 - iOS widgets turn off WidgetKit's content margins like the pass widget: their content keeps its own inset instead of

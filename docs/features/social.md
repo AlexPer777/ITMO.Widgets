@@ -54,6 +54,11 @@ each `Все`, `Друзья` or `Никто`.
   registered users through Backend lookup in chunks of 50. Phone and e-mail from
   the directory never leave the data layer. See decision
   [0006](https://github.com/alllexey-dev/itmo-widgets-backend/blob/dev/docs/decisions/0006-people-search.md).
+  My ITMO tells `е` from `ё` and takes every word but the last as a whole word, so `семен головин` finds nobody
+  named `Семён` and `федоров` misses `Фёдоров`. Every page therefore asks the query as typed and its other
+  spellings (`yoVariants`: a typed `ё` read as `е` first, then at most one `ё` per word, fewest first, at most 6)
+  at the same offset in parallel and joins the hits: the typed spelling first, each person once; the next page
+  follows while any spelling has more. `Друзья` also keeps a person once across pages.
 - `PersonRepository` (`PersonRepositoryImpl`) calls
   `MyItmoClient.personalities.getPersonality(isu)` independently of the opt-in,
   with a memory cache by ISU. The mapper keeps name, photo, positions, rooms and
@@ -155,10 +160,15 @@ builds it:
   user with open rows: the groups (`M3206, 2 курс` with the faculty), then `Расписание`, `Спорт` and `Друзья` as
   Backend's viewer capabilities allow (all open to self); they lead to `AppRoutes.UserSchedule`, `UserSport` and
   `UserFriends` with the ISU and name. `teachingFirst` puts `Преподавание` first when they teach the viewer.
-- `Контакты` (`ProfileContact`) shows nonblank My ITMO contact values and their type labels after the study and
-  teaching blocks and before a teacher's reviews. Recognized e-mail, phone, social handles and https links open
-  externally with the icon of their kind (`mail`, `call`, the Telegram or VK mark, `link`); unknown values stay plain
-  text with the neutral `info` icon and no action. An empty list has no section.
+- `Контакты` (`ProfileContact`) shows nonblank My ITMO contact values after the study and teaching blocks and before
+  a teacher's reviews. The data layer reads each `contact_alias` as a `ContactKind`; the subtitle names it (`Почта`,
+  `Телефон`, `Сайт`, `ВКонтакте`, `Telegram`, `LinkedIn`, `Skype`, `X (Twitter)`, `Facebook`, `LiveJournal`) and an
+  unknown alias stays as it is. Destinations: `mailto:` and `tel:`; `https://vk.com/<h>`, `https://t.me/<h>` and
+  `https://twitter.com/<h>` for a handle (shown as `@<h>`); `https://www.linkedin.com/in/<slug>` with the query and a
+  trailing slash dropped (shown as the slug); `https://www.facebook.com/<h>`; a `web` or `lj` value that is a single host-like token gets `https://`.
+  They open externally with the icon of where they lead (`mail`, `call`, the Telegram or VK mark, also for a `web`
+  value on `t.me` or `vk.com`, else `link`). Skype (shut down), values with spaces and unknown shapes stay plain text
+  with the neutral `info` icon and no action. An empty list has no section.
 - `Удалить из друзей` is the card's last row for a friend; `requestRemoveFriend` asks first (`ConfirmRemove`).
 - Someone else's hidden data is simply absent: no hint, no lock.
 - The entry (`UserProfileExits`) shares the profile link (only with a `Content` page), copies the ISU and opens user
