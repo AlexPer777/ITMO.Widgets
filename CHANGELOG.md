@@ -4,7 +4,17 @@ Reference documents in `docs/` describe the current state; this file records
 what changed and when. Unreleased entries describe local development, not a
 publication or deployment.
 
-## 2.3.0 — 2026-11-23
+## Unreleased
+
+- iOS: a tap on a notification that brought the app back from the background no longer closes it; the notification
+  delegate finishes on the main thread.
+- iOS: the iPhone beta notice and its `О приложении` row show only in sideloaded and debug builds; TestFlight and
+  App Store builds have push and never show them.
+- Demo: the seven students have picture avatars (`DemoAvatars`, `data:` URIs, no request to any host) instead of
+  initials; teachers keep initials. `StoreScreenshotCapture` also saves the landing's `12-friend-picker` and
+  `13-widgets` frames.
+
+## 2.3.0 — 2026-11-24
 
 The app is rebuilt on Kotlin Multiplatform: one shared Kotlin core (data, domain, view models) under Compose screens
 on Android and native SwiftUI screens in a new iOS app. Android keeps the features and the data of 2.2.
