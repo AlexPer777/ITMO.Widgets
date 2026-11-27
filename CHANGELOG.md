@@ -6,6 +6,62 @@ publication or deployment.
 
 ## Unreleased
 
+- Connections: pairing protocol 2 (ADR 0040, needs the Backend change). The app opens every code with `?protocol=2`; a
+  client that asks for grants gets a card of switches grouped «ITMO.Widgets» and «ИТМО»: required grants on and locked
+  («Нужно для работы»), `itmo:sso` («Полный доступ к ITMO.ID») off every time with its warning and a confirmation,
+  «Зачем: …» from the registry, an unknown ITMO grant «Другой доступ к ИТМО» with «обновите приложение». The sign-in
+  runs only for a chosen ITMO grant; with `itmo:sso` the session's `KEYCLOAK_IDENTITY` is read from the isolated store
+  at the callback, checked against the session's `sid` and sealed in the v2 bundle with the chosen items. Protocol 1
+  keeps its card and v1 bundle. A client with an open ITMO sign-in has «Забрать доступ к ИТМО» on its screen: the phone
+  ends its ITMO session and reports `itmo-closed`; a client without an ITMO sign-in shows «Входа в ИТМО нет» with «Войти
+  в ИТМО» instead of «Вход закрыт» and no reminder.
+- Settings: the tiles of `Уведомления` share one colour while on and turn grey while off, instead of a different
+  colour per type.
+- Moderation: the author of a subject link or a teacher review learns the outcome of a moderator's decision on it
+  (published, rejected with the reason, hidden, visible again) in the bell and as a push on the new channel and
+  switch `Модерация`; a tap opens the subject's links or the teacher's profile. Backend's
+  `GET /api/users/me/moderation-notices` and `MODERATION_NOTICE_PAYLOAD`; the contract is synced from Backend's pull
+  request branch (with `InstallInfo.signedOutAt` and `GET /api/schedule/friends`, not mirrored, from `dev`).
+- Sheet scores: the AI no longer runs again when its total is chosen or the total is opened again. Opening the total
+  reads the rule Backend already keeps for the sheet (`GET`, never an analysis) and shows it as a variant at once;
+  only `Посчитать с ИИ` or the new `Пересчитать с ИИ` under an AI total ask for one (`POST`), and a stale rule is
+  waited for while Backend checks it. The connected AI rule read again is that total, not a second variant.
+- Sheet scores: `Посчитать с ИИ` is an action card right under `Ваш итог` that says what the AI reads,
+  with its progress in the button, instead of a plain row at the bottom of the ways.
+- Subject page: `Мои баллы из таблицы` stands right under the hero of `Баллы`, whose number the sheet would become,
+  instead of at the end of the page beside the BARS offer.
+- Kit: `ActionCard` (iOS `ItmoActionCard`) can show its button's progress.
+- Links: a `FLOW` or `ALL` link save sends Backend the flows the editor offered (`flowOptions` in
+  `SaveSubjectLinkRequest`, at most 32), so that a moderator can move a `FLOW` link to another of the author's flows;
+  a `PRIVATE` save sends none, and a Backend without the field ignores it.
+- Recordbook: a Google Drive link to an uploaded spreadsheet (`drive.google.com/file/d/<id>`, an `.xlsx`) under
+  `Баллы` now offers `Мои баллы`; the file is read by its id at the Sheets address. `Посчитать с ИИ` takes such a
+  link too, Backend normalizes it to the sheet of its id (itmo-widgets-backend#76).
+- iOS: shared links `https://widgets.alllexey.dev/u/<isu>`, `/sport/<id>`, `/sport/p/<id>` and `/pair` (and the dev
+  host) open the app as Universal Links, as on Android: the signed entitlements get associated domains for both hosts.
+  Needs the Associated Domains capability on the App ID, a new profile and the site's `apple-app-site-association`.
+- Connections: pairing no longer asks to compare a six-digit code. A new connection's card says instead to approve
+  only a QR or link opened on the user's own device (`pair_caution_title`, `pair_caution_text`); renewals have no
+  caution, as only the owner's live connection can be renewed. The code checked only a QR other than the one on a
+  genuine screen and never stopped phishing; the key commitment, the screen lock and the push after a new connection
+  stay. `PairingCrypto.verificationCode`, `Confirm.code` and `SigningIn.code` are gone; the wire is unchanged.
+- First run: the `Друзья и очередь` step connects with one tap. The step itself says what the server keeps (the
+  short names of `ServicesStoredData`) and that `Подключить` agrees to it, so the button turns the connection on
+  directly instead of opening the consent sheet for a second `Подключить`; `Подробнее` still opens the full sheet.
+  The step fits a 360 x 640 dp phone and an iPhone SE without scrolling (Android and iOS). Backend's consent
+  recording is unchanged.
+- iOS: the cards and day widgets no longer crash on a Mac when a lesson is on. The Mac's archived live countdown
+  reports an infinite width, which the cards' progress took; `FiniteProposal` now also caps an infinite size its
+  content reports, around the countdown, the progress and the widgets' `GeometryReader`s.
+- Sport: the `Запись` rows name the teacher (`Иванов И. И., Кронва`) instead of `Свободное`; other kinds keep their
+  label and dot before the teacher, and standards lessons get a `Нормативы` pill. The lesson sheet is unchanged.
+- iOS: the QR pass and the QR widget show no light seams in the concave corners between modules; every fillet of
+  `QrModulesShape` now runs in the same direction as the modules.
+- Recordbook: one BARS journal that does not map (a course project, an unknown shape) no longer fails BARS for the
+  whole semester with `Причина неизвестна`; only its subject stays on My ITMO, with a warning in the error journal.
+- iOS: the schedule widgets no longer crash on a Mac. Its widget host measures them with an infinite size, which
+  the day timeline and the cards' progress took through `GeometryReader`; every entry view now gets infinite
+  dimensions as unspecified (`FiniteProposal`).
 - iOS: a tap on a notification that brought the app back from the background no longer closes it; the notification
   delegate finishes on the main thread.
 - iOS: the iPhone beta notice and its `О приложении` row show only in sideloaded and debug builds; TestFlight and

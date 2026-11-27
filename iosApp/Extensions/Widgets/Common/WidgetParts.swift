@@ -128,9 +128,45 @@ private struct WidgetTile: ViewModifier {
     @Environment(\.paintsWidgetTile) private var paintsTile
 
     func body(content: Content) -> some View {
-        content
+        FiniteProposal { content }
             .background(paintsTile ? color : .clear)
             .containerBackground(for: .widget) { color }
+    }
+}
+
+/// Passes its content the proposal with every infinite dimension left unspecified, and reports an infinite size of
+/// the content as the proposal (or zero). The Mac's widget host measures entry views with infinite widths and its
+/// archived live texts report an infinite ideal width; a `GeometryReader` (the day timeline, the cards and their
+/// progress) then took that size and SwiftUI aborted the extension ("view origin is invalid"). On the phone, where
+/// WidgetKit proposes the family's size and texts are finite, it changes nothing.
+struct FiniteProposal: Layout {
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let finite = Self.finite(proposal)
+        guard let size = subviews.first?.sizeThatFits(finite) else { return .zero }
+        return CGSize(
+            width: size.width.isFinite ? size.width : finite.width ?? 0,
+            height: size.height.isFinite ? size.height : finite.height ?? 0
+        )
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        subviews.first?.place(
+            at: CGPoint(x: bounds.midX, y: bounds.midY), anchor: .center, proposal: Self.finite(proposal)
+        )
+    }
+
+    static func finite(_ proposal: ProposedViewSize) -> ProposedViewSize {
+        ProposedViewSize(
+            width: proposal.width.flatMap { $0.isFinite ? $0 : nil },
+            height: proposal.height.flatMap { $0.isFinite ? $0 : nil }
+        )
+    }
+}
+
+extension View {
+    /// This view inside `FiniteProposal`: never given nor reporting an infinite size.
+    func finiteLayout() -> some View {
+        FiniteProposal { self }
     }
 }
 
